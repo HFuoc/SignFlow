@@ -1,0 +1,56 @@
+.vercel/
+/app.rar
+
+# Separate thesis/reference project kept outside this repository
+/ĐATN ICP-RA/
+
+# Python desktop collector
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+build/
+dist/
+
+# Generated runtime data (retain directory documentation/markers)
+data/raw/**
+data/processed/**
+data/calibration/**
+data/exports/**
+data/reviews/**
+data/audit/**
+data/.trash/**
+!data/**/.gitkeep
+!data/**/README.md
+data/**/*.csv
+data/**/*.tmp
+data/**/*.part
+
+# Local identity storage is outside the repository; these are defense-in-depth guards
+/data/local/*.sqlite3
+/data/local/*.sqlite3-wal
+/data/local/*.sqlite3-shm
+/data/local/*.sqlite3-journal
+/data/local/*.secret
+
+# Local test and UI inspection output
+tests/artifacts/
+
+# Future PlatformIO build cache; firmware is not part of Milestone 1
+.pio/
+/.design-cache/
+
+# Milestone 1.1 web tooling and generated output
+node_modules/
+.vite/
+coverage/
+playwright-report/
+test-results/
+.npm/
+.npm-cache/
+npm-cache/
+*.tsbuildinfo
