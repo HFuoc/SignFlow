@@ -1,0 +1,149 @@
+/*
+ * SmartGlove shared One UI visual contract.
+ * Primary visual source: approved local One UI 7 SVG references.
+ * This file contains custom properties only; it is not a reset or component library.
+ */
+
+:root {
+  color-scheme: light;
+
+  --ou-font-family: "DM Sans", "Segoe UI", sans-serif;
+  --ou-type-display-max: 56px;
+  --ou-type-title: 18px;
+  --ou-type-body: 14px;
+  --ou-type-label: 11px;
+
+  --ou-color-canvas: #f1f1f3;
+  --ou-color-container: #fcfcff;
+  --ou-color-container-raised: #ffffff;
+  --ou-color-tonal: #eaeaea;
+  --ou-color-tonal-strong: #dedee5;
+  --ou-color-text: #17171a;
+  --ou-color-text-muted: #5d5d66;
+  --ou-color-outline: #d5d5dc;
+
+  /* Semantic surface and content roles consumed by the desktop integration. */
+  --ou-surface-base: var(--ou-color-canvas);
+  --ou-surface-focus: var(--ou-color-container);
+  --ou-surface-raised: var(--ou-color-container-raised);
+  --ou-surface-muted: var(--ou-color-tonal);
+  --ou-surface-selected: var(--ou-color-tonal-strong);
+  --ou-surface-pressed: var(--ou-color-tonal-strong);
+  --ou-surface-disabled: color-mix(in srgb, var(--ou-color-tonal) 52%, transparent);
+  --ou-surface-related-overlay: var(--ou-color-container-raised);
+  --ou-surface-blocking-overlay: var(--ou-color-container-raised);
+  --ou-content-high: var(--ou-color-text);
+  --ou-content-medium: var(--ou-color-text-muted);
+  --ou-content-on-inverse: var(--oui-on-inverse);
+  --ou-content-on-inverse-muted: var(--oui-on-inverse-muted);
+
+  --ou-color-accent: #387aff;
+  --ou-color-accent-strong: #185ee8;
+  --ou-color-accent-filled: #1556d8;
+  --ou-color-on-accent: #ffffff;
+  --ou-color-accent-tonal: #e4edff;
+
+  --oui-action-primary-bg: #387aff;
+  --oui-action-primary-fg: #ffffff;
+  --oui-action-primary-hover: #2f6ee8;
+  --oui-action-on-inverse-bg: #fcfcff;
+  --oui-action-on-inverse-fg: #17171a;
+  --oui-action-on-inverse-hover: #e5e5ea;
+  --oui-surface-inverse: #17171a;
+  --ou-surface-inverse: var(--oui-surface-inverse);
+  --oui-on-inverse: #fcfcff;
+  --oui-on-inverse-muted: #c7c7cf;
+
+  --ou-color-success: #087846;
+  --ou-color-success-tonal: #dff8eb;
+  --ou-color-warning: #a9430a;
+  --ou-color-danger: #b3261e;
+  --ou-color-danger-tonal: #ffebe9;
+  --ou-color-left: #1758c7;
+  --ou-color-right: #a13a08;
+
+  --ou-status-positive-fg: var(--ou-color-success);
+  --ou-status-positive-bg: var(--ou-color-success-tonal);
+  --ou-status-warning-fg: var(--ou-color-warning);
+  --ou-status-negative-fg: var(--ou-color-danger);
+  --ou-status-negative-bg: var(--ou-color-danger-tonal);
+
+  --ou-focus: #1556d8;
+  --ou-opacity-disabled: 0.52;
+  --ou-radius-control: 18px;
+  --ou-radius-chip: 999px;
+  --ou-radius-card: 28px;
+  --ou-radius-shell: 32px;
+
+  --ou-space-1: 4px;
+  --ou-space-2: 8px;
+  --ou-space-3: 12px;
+  --ou-space-4: 16px;
+  --ou-space-5: 20px;
+  --ou-space-6: 24px;
+  --ou-space-8: 32px;
+  --ou-space-10: 40px;
+  --ou-control-height: 46px;
+  --ou-icon-optical-small: 18px;
+  --ou-icon-optical-standard: 20px;
+  --ou-icon-optical-large: 24px;
+  --ou-icon-stroke: 1.8;
+
+  --ou-shadow-float: 0 7px 16px rgba(23, 23, 26, 0.12), 0 22px 48px rgba(23, 23, 26, 0.08);
+  --ou-shadow-card: none;
+  --ou-shadow-related-overlay: 0 12px 34px rgba(23, 23, 26, 0.12);
+  --ou-color-frosted: rgba(252, 252, 255, 0.88);
+  --ou-color-frosted-fallback: #fcfcff;
+  --ou-frosted-blur: 20px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --ou-color-canvas: #010102;
+  --ou-color-container: #17171a;
+  --ou-color-container-raised: #2e2e30;
+  --ou-color-tonal: #2e2e30;
+  --ou-color-tonal-strong: #5f5f61;
+  --ou-color-text: #fcfcff;
+  --ou-color-text-muted: #a9a9b0;
+  --ou-color-outline: #3e3e43;
+
+  --ou-color-accent: #78a3ff;
+  --ou-color-accent-strong: #a9c3ff;
+  --ou-color-accent-filled: #387aff;
+  --ou-color-on-accent: #ffffff;
+  --ou-color-accent-tonal: #203a6d;
+
+  --oui-action-primary-bg: #387aff;
+  --oui-action-primary-fg: #ffffff;
+  --oui-action-primary-hover: #2f6ee8;
+  --oui-action-on-inverse-bg: #f7f7fa;
+  --oui-action-on-inverse-fg: #17171a;
+  --oui-action-on-inverse-hover: #dedee4;
+  --oui-surface-inverse: #34343a;
+  --oui-on-inverse: #fcfcff;
+  --oui-on-inverse-muted: #c7c7cf;
+
+  --ou-color-success: #65dfa5;
+  --ou-color-success-tonal: #173f2d;
+  --ou-color-warning: #ff9b65;
+  --ou-color-danger: #ff8d8b;
+  --ou-color-danger-tonal: #51292b;
+  --ou-color-left: #82aaff;
+  --ou-color-right: #ff9a66;
+
+  --ou-focus: #b4cbff;
+  --ou-shadow-float: 0 7px 16px rgba(0, 0, 0, 0.25), 0 22px 54px rgba(0, 0, 0, 0.22);
+  --ou-shadow-card: none;
+  --ou-shadow-related-overlay: 0 14px 38px rgba(0, 0, 0, 0.3);
+  --ou-color-frosted: rgba(23, 23, 26, 0.72);
+  --ou-color-frosted-fallback: #17171a;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --ou-color-frosted: var(--ou-color-frosted-fallback);
+    --ou-frosted-blur: 0px;
+  }
+}

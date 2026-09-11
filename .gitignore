@@ -54,3 +54,22 @@ test-results/
 .npm-cache/
 npm-cache/
 *.tsbuildinfo
+
+# Source-only publication
+/apk/
+/patch/
+/backups/
+*.apk
+*.aab
+*.patch
+*.diff
+*.zip
+*.rar
+*.7z
+/.design-reference/
+/SESSION_TRANSFER*.md
+/FULL_SOURCE_PACKAGE.txt
+.env
+.env.*
+*.sqlite3*
+*.secret

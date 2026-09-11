@@ -1,0 +1,2324 @@
+.app-shell {
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 76px minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--collector-canvas);
+}
+
+.app-shell[data-navigation="bottom"] {
+  grid-template-rows: calc(76px + env(safe-area-inset-top, 0px)) minmax(0, 1fr) calc(78px + env(safe-area-inset-bottom, 0px));
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 200;
+  top: 8px;
+  left: 50%;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ou-color-text);
+  color: var(--ou-color-container);
+  transform: translate(-50%, -160%);
+  transition: transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+
+.skip-link:focus {
+  box-shadow: 0 0 0 3px var(--ou-color-container), 0 0 0 6px var(--ou-focus);
+  transform: translate(-50%, 0);
+}
+
+.one-ui-status-indicator {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: var(--collector-surface-soft);
+  color: var(--ou-color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.one-ui-status-indicator__mark {
+  width: 8px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+}
+
+.one-ui-status-indicator[data-tone="positive"] {
+  background: var(--ou-color-success-tonal);
+  color: var(--ou-color-success);
+}
+
+.one-ui-status-indicator[data-tone="positive"] .one-ui-status-indicator__mark {
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.one-ui-status-indicator[data-tone="waiting"] .one-ui-status-indicator__mark {
+  border-radius: 50%;
+  border-style: dashed;
+}
+
+.one-ui-top-app-bar {
+  grid-row: 1;
+  z-index: 40;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 16px;
+  border-bottom: 1px solid transparent;
+  background: var(--collector-canvas);
+  transition: background var(--ou-motion-fast) var(--ou-ease-standard), box-shadow var(--ou-motion-fast) var(--ou-ease-standard);
+}
+
+.app-shell[data-navigation="bottom"] .one-ui-top-app-bar { padding-top: env(safe-area-inset-top, 0px); }
+.app-shell[data-navigation="rail"] .one-ui-top-app-bar { padding-left: 136px; }
+
+.one-ui-top-app-bar[data-elevated="true"] {
+  border-bottom-color: var(--collector-hairline);
+  background: var(--ou-surface-focus);
+  box-shadow: var(--ou-shadow-card);
+}
+
+.one-ui-top-app-bar__heading {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.one-ui-top-app-bar h1 {
+  overflow: hidden;
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.one-ui-top-app-bar__identity {
+  overflow: hidden;
+  color: var(--ou-color-text-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.one-ui-top-app-bar__trailing,
+.one-ui-top-app-bar__states,
+.one-ui-top-app-bar__actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.one-ui-top-app-bar__trailing { justify-content: flex-end; gap: 14px; }
+.one-ui-top-app-bar__states { gap: 8px; }
+.one-ui-top-app-bar__actions { gap: 6px; }
+
+.one-ui-icon-button {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 25px;
+  background: transparent;
+  color: var(--ou-color-text);
+  cursor: pointer;
+  transition: background var(--ou-motion-fast) var(--ou-ease-standard), transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+
+.one-ui-icon-button:hover,
+.one-ui-icon-button[aria-expanded="true"] { background: var(--collector-surface-soft); }
+.one-ui-icon-button:active { transform: scale(0.96); }
+
+.one-ui-icon-button__glyph,
+.one-ui-icon-button__glyph img,
+.one-ui-icon-button__glyph svg {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+.one-ui-icon-button__glyph img { object-fit: contain; }
+.one-ui-icon-button__glyph svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.one-ui-icon-button::after {
+  position: absolute;
+  z-index: 90;
+  top: calc(100% + 6px);
+  left: 50%;
+  width: max-content;
+  max-width: 160px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--ou-color-text);
+  color: var(--ou-color-container);
+  content: attr(data-tooltip);
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -4px);
+  transition: opacity var(--ou-motion-fast) var(--ou-ease-opacity-in), transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+
+.one-ui-icon-button:hover::after,
+.one-ui-icon-button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.one-ui-icon-button[aria-expanded="true"]::after { display: none; }
+
+.app-content {
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.app-content::-webkit-scrollbar { width: 8px; }
+.app-content::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--collector-surface-strong); }
+.app-content::-webkit-scrollbar-track { background: transparent; }
+.app-shell[data-navigation="rail"] .app-content { padding-left: 120px; }
+
+.one-ui-activity-lane {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 16px 10px;
+  background: var(--collector-canvas);
+}
+
+.one-ui-activity-lane:empty { display: none; }
+
+.landscape-app-rail {
+  position: fixed;
+  z-index: 38;
+  top: 92px;
+  left: 16px;
+  width: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 17px;
+  border-radius: 28px;
+  background: var(--collector-surface);
+  box-shadow: var(--ou-shadow-card);
+}
+
+.landscape-app-rail button {
+  position: relative;
+  width: 54px;
+  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 2px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ou-color-text-muted);
+  cursor: pointer;
+  transition: background var(--ou-motion-fast) var(--ou-ease-standard), color var(--ou-motion-fast) var(--ou-ease-standard), transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+
+.landscape-app-rail button:hover { background: var(--collector-surface-soft); color: var(--ou-color-text); }
+.landscape-app-rail button:active { transform: scale(0.96); }
+.landscape-app-rail button.is-selected { background: var(--collector-surface-strong); color: var(--ou-color-text); }
+
+.nav-destination__icon,
+.nav-destination__icon svg { width: var(--ou-icon-optical-standard); height: var(--ou-icon-optical-standard); display: block; }
+.nav-destination__icon svg { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: var(--ou-icon-stroke); }
+.nav-destination__label { overflow: hidden; max-width: 100%; font-size: 12px; font-weight: 500; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.landscape-app-rail .nav-destination__label { width: max-content; max-width: 70px; text-overflow: clip; }
+
+.compact-app-navigation {
+  position: relative;
+  z-index: 45;
+  grid-row: 3;
+  align-self: start;
+  justify-self: center;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid color-mix(in srgb, var(--collector-hairline) 84%, transparent);
+  border-radius: 31px;
+  background: color-mix(in srgb, var(--collector-surface) 94%, transparent);
+  box-shadow: var(--ou-shadow-float);
+  backdrop-filter: blur(14px);
+  margin-top: 8px;
+}
+
+.compact-app-navigation button {
+  min-width: 112px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 26px;
+  background: transparent;
+  color: var(--ou-color-text-muted);
+  cursor: pointer;
+}
+
+.compact-app-navigation button.is-selected { background: var(--collector-surface-strong); color: var(--ou-color-text); }
+.app-shell[data-navigation="bottom"] .page { padding-bottom: 32px; }
+
+@supports not (backdrop-filter: blur(1px)) {
+  .one-ui-top-app-bar[data-elevated="true"],
+  .compact-app-navigation { background: var(--collector-surface); }
+}
+
+/* Source-grounded Stage 1 variant; other screens retain their approved shell.
+   See docs/ONE_UI_DESIGN_RULES.md for node anatomy and desktop adaptations. */
+.app-shell[data-page="devices"][data-navigation="bottom"] {
+  grid-template-rows: calc(76px + env(safe-area-inset-top, 0px)) minmax(0, 1fr) calc(84px + env(safe-area-inset-bottom, 0px));
+}
+.app-shell[data-page="devices"] .one-ui-top-app-bar h1 { font-size: 20px; line-height: 1.3; letter-spacing: 0; }
+.app-shell[data-page="devices"] .one-ui-top-app-bar__identity { line-height: 1.4; letter-spacing: 0; }
+.app-shell[data-page="devices"] .one-ui-top-app-bar__states .one-ui-status-indicator { font-size: 14px; min-height: 30px; }
+.app-shell[data-page="devices"] .one-ui-top-app-bar__actions { gap: 0; border-radius: 25px; }
+.app-shell[data-page="devices"] .one-ui-top-app-bar .one-ui-icon-button__glyph { width: 24px; height: 24px; }
+.app-shell[data-page="devices"] .one-ui-top-app-bar[data-elevated="true"] { border-color: transparent; background: var(--collector-canvas); box-shadow: none; }
+.app-shell[data-page="devices"] .one-ui-top-app-bar[data-elevated="true"] .one-ui-top-app-bar__actions { background: color-mix(in srgb, var(--collector-surface-strong) 60%, transparent); backdrop-filter: blur(12px); }
+.app-shell[data-page="devices"] .landscape-app-rail { bottom: 16px; gap: 16px; box-shadow: none; }
+.app-shell[data-page="devices"] .landscape-app-rail button { min-height: 74px; padding: 0; gap: 6px; border-radius: 9px; background: transparent; }
+.app-shell[data-page="devices"] .landscape-app-rail .nav-destination__icon { width: 54px; height: 50px; display: grid; place-items: center; border-radius: 9px; }
+.app-shell[data-page="devices"] .landscape-app-rail .nav-destination__icon svg { width: 30px; height: 30px; }
+.app-shell[data-page="devices"] .landscape-app-rail button:is(.is-selected, :hover) .nav-destination__icon { background: var(--collector-surface-soft); }
+.app-shell[data-page="devices"] .landscape-app-rail .nav-destination__label { font-weight: 400; line-height: 18px; }
+.app-shell[data-page="devices"] .compact-app-navigation { min-height: 68px; padding: 6px; border-radius: 34px; }
+.app-shell[data-page="devices"] .compact-app-navigation button { min-height: 54px; flex-direction: column; gap: 4px; padding: 4px 16px; border-radius: 27px; }
+.app-shell[data-page="devices"] .compact-app-navigation .nav-destination__icon,
+.app-shell[data-page="devices"] .compact-app-navigation .nav-destination__icon svg { width: 24px; height: 24px; }
+.app-shell[data-page="devices"] .compact-app-navigation .nav-destination__label { font-weight: 400; }
+
+@media (max-width: 900px) {
+  .one-ui-top-app-bar__states { display: none; }
+}
+
+@media (max-width: 640px) {
+  .one-ui-top-app-bar { gap: 10px; padding-inline: 12px; }
+  .one-ui-top-app-bar h1 { font-size: 19px; }
+  .one-ui-top-app-bar__identity { font-size: 13px; }
+  .one-ui-icon-button { width: 48px; height: 48px; }
+  .compact-app-navigation { width: calc(100vw - 24px); }
+  .compact-app-navigation button { min-width: 0; flex: 1; }
+  .one-ui-activity-lane { padding-inline: 12px; }
+}
+
+@media (max-width: 460px) {
+  .compact-app-navigation button { padding-inline: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-utility-actions::before { transition: none; }
+  .one-ui-icon-button,
+  .landscape-app-rail button,
+  .one-ui-top-app-bar,
+  .skip-link { transition-duration: 0.01ms; }
+}
+
+@media (forced-colors: active) {
+  .app-shell[data-page="devices"] { --collector-canvas: Canvas; --collector-surface: Canvas; --collector-surface-soft: Canvas; --collector-surface-strong: Canvas; }
+  .one-ui-top-app-bar,
+  .landscape-app-rail,
+  .compact-app-navigation { border-color: CanvasText; background: Canvas; box-shadow: none; }
+  .one-ui-status-indicator__mark { forced-color-adjust: none; border-color: currentColor; }
+  .one-ui-status-indicator[data-tone="positive"] .one-ui-status-indicator__mark { background: currentColor; }
+  .landscape-app-rail button.is-selected,
+  .compact-app-navigation button.is-selected { outline: 2px solid CanvasText; background: Canvas; color: CanvasText; }
+}
+
+/* Full visual pass — unified large-screen shell.
+   Figma: Top App Bar 1495:10992, Navigation Rail 1589:7438,
+   Floating Toolbar 1495:11133. */
+.app-shell {
+  --collector-foreground: #eaeaea;
+  --collector-component: #fcfcff;
+}
+:root[data-theme="dark"] .app-shell {
+  --collector-foreground: #2e2e30;
+  --collector-component: #5f5f61;
+}
+
+.one-ui-top-app-bar {
+  gap: 20px;
+  padding-inline: 20px;
+  border-bottom: 0;
+  background: var(--collector-canvas);
+}
+.app-shell[data-navigation="rail"] .one-ui-top-app-bar { padding-left: 136px; padding-right: 20px; }
+.one-ui-top-app-bar[data-elevated="true"] {
+  border-bottom-color: transparent;
+  background: var(--collector-canvas);
+  box-shadow: none;
+}
+.one-ui-top-app-bar__heading { gap: 1px; }
+.one-ui-top-app-bar h1 { font-size: 20px; font-weight: 700; line-height: 1.3; letter-spacing: 0; }
+.one-ui-top-app-bar__identity { font-size: 14px; line-height: 1.4; letter-spacing: 0; }
+.one-ui-top-app-bar__trailing { gap: 12px; }
+.one-ui-top-app-bar__states { gap: 8px; }
+.one-ui-top-app-bar__actions { gap: 0; border-radius: 25px; }
+.one-ui-top-app-bar[data-elevated="true"] .one-ui-top-app-bar__actions {
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(23,23,26,.18);
+  box-shadow: var(--ou-shadow-float);
+  -webkit-backdrop-filter: blur(2px) saturate(1.02);
+  backdrop-filter: blur(2px) saturate(1.02);
+}
+:root:not([data-theme="dark"]) .one-ui-top-app-bar[data-elevated="true"] .one-ui-top-app-bar__actions {
+  border-color: rgba(20,20,24,.05);
+  background: rgba(252,252,255,.28);
+}
+.one-ui-icon-button { width: 50px; height: 50px; border-radius: 25px; }
+.one-ui-icon-button:hover,
+.one-ui-icon-button[aria-expanded="true"] { background: var(--collector-surface-soft); }
+.one-ui-top-app-bar[data-elevated="true"] .one-ui-icon-button:hover,
+.one-ui-top-app-bar[data-elevated="true"] .one-ui-icon-button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--collector-surface) 38%, transparent);
+}
+.one-ui-icon-button__glyph,
+.one-ui-icon-button__glyph img,
+.one-ui-icon-button__glyph svg { width: 24px; height: 24px; }
+
+.app-shell[data-navigation="rail"] .app-content { padding-left: 120px; }
+.one-ui-activity-lane { padding: 8px 24px 10px; }
+
+.landscape-app-rail {
+  top: 92px;
+  bottom: 16px;
+  width: 88px;
+  gap: 16px;
+  padding: 20px 17px;
+  border-radius: 28px;
+  background: var(--collector-surface);
+  box-shadow: none;
+}
+.landscape-app-rail button {
+  width: 54px;
+  min-height: 74px;
+  gap: 6px;
+  padding: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--ou-color-text-muted);
+}
+.landscape-app-rail button:hover,
+.landscape-app-rail button.is-selected { background: transparent; color: var(--ou-color-text); }
+.landscape-app-rail .nav-destination__icon {
+  width: 54px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  transition: background var(--ou-motion-fast) var(--ou-ease-standard), transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+.landscape-app-rail button:is(.is-selected, :hover) .nav-destination__icon { background: var(--collector-surface-soft); }
+.landscape-app-rail button:active .nav-destination__icon { transform: scale(.96); }
+.landscape-app-rail .nav-destination__icon,
+.landscape-app-rail .nav-destination__icon svg,
+.landscape-app-rail .nav-destination__icon img { width: 30px; height: 30px; }
+.landscape-app-rail .nav-destination__icon { width: 54px; height: 50px; }
+.landscape-app-rail .nav-destination__icon img { object-fit: contain; }
+:root:not([data-theme="dark"]) .nav-destination__icon img.one-ui-source-glyph { filter: brightness(0); }
+.landscape-app-rail .nav-destination__label { max-width: 72px; font-size: 12px; font-weight: 400; line-height: 18px; }
+
+.app-shell[data-navigation="bottom"] {
+  grid-template-rows: calc(76px + env(safe-area-inset-top, 0px)) minmax(0, 1fr) calc(86px + env(safe-area-inset-bottom, 0px));
+}
+.compact-app-navigation {
+  min-height: 68px;
+  gap: 0;
+  padding: 6px;
+  border: 0;
+  border-radius: 38px;
+  background: color-mix(in srgb, var(--collector-surface) 72%, transparent);
+  box-shadow: var(--ou-shadow-float);
+  backdrop-filter: blur(14px);
+  margin-top: 8px;
+}
+.compact-app-navigation button {
+  min-width: 112px;
+  min-height: 56px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px 18px;
+  border-radius: 28px;
+  color: var(--ou-color-text-muted);
+}
+.compact-app-navigation button.is-selected { background: var(--collector-foreground); color: var(--ou-color-text); }
+.compact-app-navigation .nav-destination__icon,
+.compact-app-navigation .nav-destination__icon svg,
+.compact-app-navigation .nav-destination__icon img { width: 24px; height: 24px; }
+.compact-app-navigation .nav-destination__icon img { object-fit: contain; }
+.compact-app-navigation .nav-destination__label { font-size: 12px; font-weight: 400; line-height: 15px; }
+
+/* Remove the old representative-screen fork: all product pages now share the
+   same sourced shell geometry. */
+.app-shell[data-page] .one-ui-top-app-bar h1 { font-size: 20px; line-height: 1.3; letter-spacing: 0; }
+.app-shell[data-page] .one-ui-top-app-bar__identity { line-height: 1.4; letter-spacing: 0; }
+.app-shell[data-page] .one-ui-top-app-bar__states .one-ui-status-indicator { font-size: 13px; min-height: 30px; }
+.app-shell[data-page] .one-ui-top-app-bar__actions { gap: 0; border-radius: 25px; }
+.app-shell[data-page] .landscape-app-rail { bottom: 16px; gap: 16px; box-shadow: none; }
+.app-shell[data-page] .landscape-app-rail button { min-height: 74px; padding: 0; gap: 6px; border-radius: 9px; background: transparent; }
+.app-shell[data-page] .landscape-app-rail .nav-destination__icon { width: 54px; height: 50px; display: grid; place-items: center; border-radius: 9px; }
+.app-shell[data-page] .landscape-app-rail .nav-destination__icon svg,
+.app-shell[data-page] .landscape-app-rail .nav-destination__icon img { width: 30px; height: 30px; }
+.app-shell[data-page] .landscape-app-rail button:is(.is-selected, :hover) .nav-destination__icon { background: var(--collector-surface-soft); }
+.app-shell[data-page] .compact-app-navigation { min-height: 68px; padding: 6px; border-radius: 38px; }
+.app-shell[data-page] .compact-app-navigation button { min-height: 56px; flex-direction: column; gap: 3px; padding: 4px 18px; border-radius: 28px; }
+
+@media (max-width: 640px) {
+  .one-ui-top-app-bar { padding-inline: 16px; }
+  .one-ui-activity-lane { padding-inline: 16px; }
+  .compact-app-navigation { width: calc(100vw - 28px); min-height: 66px; }
+  .compact-app-navigation button { min-width: 0; min-height: 54px; flex: 1; padding-inline: 10px; }
+}
+
+/* Direction B — Samsung Health-inspired real shell implementation. */
+.health-app-shell {
+  --health-bg: #f1f1f3;
+  --health-nav: rgba(255, 255, 255, .55);
+  --health-selected: rgba(255, 255, 255, .78);
+  --health-glass: rgba(252, 252, 255, .58);
+  --health-muted: #676771;
+  position: relative;
+  height: 100dvh;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) 88px;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 430px at 38% 100%, rgba(255,108,135,.22), transparent 62%),
+    radial-gradient(760px 420px at 74% 28%, rgba(100,91,238,.24), transparent 60%),
+    radial-gradient(520px 360px at 18% 60%, rgba(94,148,255,.12), transparent 67%),
+    var(--health-bg);
+}
+
+:root[data-theme="dark"] .health-app-shell {
+  --health-bg: #09080f;
+  --health-nav: rgba(23, 23, 26, .53);
+  --health-selected: rgba(255, 255, 255, .17);
+  --health-glass: rgba(32, 29, 39, .58);
+  --health-muted: rgba(255,255,255,.67);
+}
+
+.health-app-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,.025), transparent 38%, rgba(255,255,255,.018));
+}
+
+.health-shell-header {
+  position: relative;
+  z-index: 30;
+  padding: 20px 42px 0;
+}
+
+.health-topbar {
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.health-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.health-brand__title {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.8px;
+}
+
+.health-brand__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #67dcb0;
+  box-shadow: 0 0 0 6px rgba(103,220,176,.12);
+}
+
+.health-utility {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-status {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid color-mix(in srgb, var(--collector-hairline) 80%, transparent);
+  border-radius: 17px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.health-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.health-status[data-tone="positive"] {
+  border-color: transparent;
+  background: var(--ou-color-success-tonal);
+  color: var(--ou-color-success);
+}
+
+.health-utility .one-ui-icon-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+}
+
+.health-utility .one-ui-icon-button:hover,
+.health-utility .one-ui-icon-button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--collector-surface-strong) 54%, transparent);
+}
+
+.health-utility .one-ui-icon-button__glyph,
+.health-utility .one-ui-icon-button__glyph svg,
+.health-utility .one-ui-icon-button__glyph img {
+  width: 24px;
+  height: 24px;
+}
+
+.health-context-nav {
+  height: 58px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3px;
+  margin-top: 14px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--collector-hairline) 90%, transparent);
+  border-radius: 29px;
+  background: var(--health-nav);
+  box-shadow: 0 6px 28px rgba(0,0,0,.12);
+  backdrop-filter: blur(12px);
+}
+
+.health-context-item {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 29px;
+  background: transparent;
+  color: var(--health-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--ou-motion-fast) var(--ou-ease-standard), color var(--ou-motion-fast) var(--ou-ease-standard), transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+
+.health-context-item:hover {
+  color: var(--ou-color-text);
+}
+
+.health-context-item:active {
+  transform: scale(.985);
+}
+
+.health-context-item.is-active {
+  background: var(--health-selected);
+  color: var(--ou-color-text);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.07);
+}
+
+.health-context-item__icon,
+.health-context-item__icon svg {
+  width: 27px;
+  height: 27px;
+  display: block;
+}
+.health-context-item:focus-visible { outline: 2px solid var(--ou-focus); outline-offset: -3px; box-shadow: none; }
+.health-utility .one-ui-icon-button:disabled:hover { background: transparent; }
+
+.health-context-item__icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.health-app-content {
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 0 42px;
+  scroll-padding-top: 20px;
+}
+
+.health-app-content .one-ui-activity-lane {
+  padding: 10px 0 0;
+  background: transparent;
+}
+
+.health-app-content::-webkit-scrollbar { width: 8px; }
+.health-app-content::-webkit-scrollbar-thumb { border-radius: 999px; background: color-mix(in srgb, var(--collector-surface-strong) 72%, transparent); }
+.health-app-content::-webkit-scrollbar-track { background: transparent; }
+
+.health-bottom-dock.compact-app-navigation {
+  position: relative;
+  z-index: 45;
+  grid-row: 3;
+  align-self: start;
+  justify-self: center;
+  width: 430px;
+  min-height: 70px;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  margin-top: 9px;
+  padding: 6px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 35px;
+  background: rgba(23,23,26,.72);
+  box-shadow: 0 13px 35px rgba(0,0,0,.28);
+  color: #fff;
+  backdrop-filter: blur(18px);
+}
+
+:root:not([data-theme="dark"]) .health-bottom-dock.compact-app-navigation {
+  border-color: rgba(20,20,24,.09);
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 12px 35px rgba(54,39,75,.16);
+  color: #17171a;
+}
+
+.health-bottom-dock.compact-app-navigation button {
+  min-width: 0;
+  min-height: 58px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 29px;
+  background: transparent;
+  color: rgba(255,255,255,.66);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+:root:not([data-theme="dark"]) .health-bottom-dock.compact-app-navigation button { color: #6b6b74; }
+
+.health-bottom-dock.compact-app-navigation button.is-selected {
+  background: rgba(255,255,255,.17);
+  color: #fff;
+}
+
+:root:not([data-theme="dark"]) .health-bottom-dock.compact-app-navigation button.is-selected {
+  background: var(--health-chrome-selected);
+  color: #111;
+}
+
+.health-bottom-dock .nav-destination__icon,
+.health-bottom-dock .nav-destination__icon svg,
+.health-bottom-dock .nav-destination__icon img {
+  width: 22px;
+  height: 22px;
+}
+
+.health-bottom-dock .nav-destination__icon img { object-fit: contain; }
+:root:not([data-theme="dark"]) .health-bottom-dock .nav-destination__icon img.one-ui-source-glyph { filter: brightness(0); }
+.health-bottom-dock .nav-destination__label { font-size: 13px; font-weight: 650; }
+
+@media (max-width: 900px) {
+  .health-shell-header { padding-inline: 22px; }
+  .health-app-content { padding-inline: 22px; }
+  .health-status { display: none; }
+  .health-context-item { gap: 6px; font-size: 12px; }
+  .health-context-item__icon, .health-context-item__icon svg { width: 23px; height: 23px; }
+}
+
+@media (max-width: 640px) {
+  .health-shell-header { padding: 14px 14px 0; }
+  .health-app-content { padding-inline: 14px; }
+  .health-brand__title { font-size: 25px; }
+  .health-context-nav { height: 62px; margin-top: 10px; border-radius: 31px; }
+  .health-context-item span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  .health-bottom-dock.compact-app-navigation { width: calc(100vw - 28px); }
+  .health-bottom-dock.compact-app-navigation button { padding-inline: 10px; }
+}
+
+/* Specificity guard: the legacy bottom-navigation grid must not collapse Direction B. */
+.app-shell.health-app-shell,
+.app-shell.health-app-shell[data-navigation="bottom"] {
+  grid-template-rows: 146px minmax(0, 1fr) 88px;
+}
+
+.app-shell.health-app-shell .health-shell-header { grid-row: 1; }
+.app-shell.health-app-shell .health-app-content { grid-row: 2; }
+.app-shell.health-app-shell .health-bottom-dock { grid-row: 3; }
+
+@media (prefers-reduced-motion: reduce) {
+  .health-context-item:active { transform: none; }
+}
+@media (forced-colors: active) {
+  .health-context-nav, .health-bottom-dock { background: Canvas !important; border: 1px solid CanvasText !important; }
+  .health-context-item.is-active { outline: 2px solid Highlight; outline-offset: -3px; }
+  .health-status[data-tone] { background: Canvas; color: CanvasText; border: 1px solid CanvasText; }
+}
+
+/* 2026-09-09 approved shell behavior — shared collapse, continuous canvas,
+   Figma-grounded contextual icons and floating navigation. */
+.health-app-shell {
+  --shell-collapse-progress: 0;
+  grid-template-rows: minmax(0, 1fr) !important;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-shell.health-app-shell,
+.app-shell.health-app-shell[data-navigation="bottom"] {
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.health-shell-header {
+  position: absolute;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 146px;
+  padding: 20px 42px 0;
+  pointer-events: none;
+  background: transparent;
+}
+
+.health-topbar,
+.health-context-nav,
+.health-utility {
+  pointer-events: auto;
+}
+
+.health-topbar {
+  position: relative;
+  height: 54px;
+  overflow: visible;
+}
+
+.health-brand {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  min-width: max-content;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  opacity: calc(1 - var(--shell-collapse-progress));
+  transform: translateY(calc(-50% - (var(--shell-collapse-progress) * 20px)));
+  transform-origin: left center;
+  will-change: opacity, transform;
+}
+
+.health-brand__title {
+  display: block;
+  flex: none;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.health-brand__dot {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  overflow: visible;
+}
+
+.health-utility {
+  position: relative;
+  z-index: 70;
+  margin-left: auto;
+  overflow: visible;
+}
+
+.health-utility-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.health-utility-actions {
+  position: relative;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 29px;
+  isolation: isolate;
+}
+
+/* Quick utilities start as independent icon buttons. The enclosing
+   One UI pill is revealed progressively by the shared shell scroll progress,
+   matching the Samsung Health reference rather than being permanently visible. */
+.health-utility-actions::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--collector-hairline) 72%, transparent);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--collector-surface) 88%, transparent);
+  box-shadow: 0 7px 24px rgba(0,0,0,.12);
+  content: "";
+  opacity: var(--shell-collapse-progress);
+  pointer-events: none;
+  transform: scale(calc(.94 + (var(--shell-collapse-progress) * .06)));
+  transform-origin: center;
+  transition: opacity 80ms linear;
+  will-change: opacity, transform;
+}
+
+:root[data-theme="dark"] .health-utility-actions::before {
+  background: rgba(23,23,26,.86);
+  border-color: rgba(255,255,255,.08);
+}
+
+.health-utility-actions .one-ui-icon-button {
+  width: 46px;
+  height: 46px;
+  border-radius: 23px;
+}
+
+.health-utility-actions .one-ui-icon-button::after {
+  z-index: 140;
+  top: 48px;
+  left: 50%;
+  width: max-content;
+  max-width: none;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--collector-component) 88%, transparent);
+  color: var(--ou-color-text);
+  box-shadow: 0 9px 28px rgba(0,0,0,.24);
+  white-space: nowrap;
+  transform: translate(-50%, -4px);
+}
+
+.health-utility-actions .one-ui-icon-button:hover::after,
+.health-utility-actions .one-ui-icon-button:focus-visible::after {
+  transform: translate(-50%, 0);
+}
+
+.health-context-nav {
+  position: relative;
+  z-index: 35;
+  opacity: calc(1 - var(--shell-collapse-progress));
+  transform: translateY(calc(var(--shell-collapse-progress) * -58px));
+  transform-origin: center top;
+  will-change: opacity, transform;
+}
+
+.health-context-item__icon,
+.health-context-item__icon > img,
+.health-context-item__icon svg {
+  width: 25px;
+  height: 25px;
+  display: block;
+  flex: 0 0 25px;
+}
+
+.health-context-item__icon > img,
+.health-utility-actions .one-ui-icon-button__glyph img,
+.health-bottom-dock .one-ui-figma-glyph {
+  object-fit: contain;
+}
+
+:root:not([data-theme="dark"]) .one-ui-figma-glyph,
+:root:not([data-theme="dark"]) .health-context-item__icon img.one-ui-source-glyph,
+:root:not([data-theme="dark"]) .health-utility-actions img.one-ui-source-glyph {
+  filter: brightness(0);
+}
+
+.health-app-content,
+.app-shell.health-app-shell .health-app-content {
+  position: relative;
+  z-index: 1;
+  grid-row: 1 !important;
+  grid-column: 1;
+  min-height: 0;
+  padding: 146px 42px 122px;
+  scroll-padding-top: 92px;
+  scrollbar-gutter: stable;
+  /* Symmetric scroll-edge treatment: the top remains the stronger cue while
+     the bottom now eases content out gently before the floating app dock. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 34px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24px, #000 calc(100% - 34px), transparent 100%);
+}
+
+.health-bottom-dock.compact-app-navigation,
+.app-shell.health-app-shell .health-bottom-dock {
+  position: absolute;
+  z-index: 60;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  grid-row: auto !important;
+  grid-column: 1;
+  align-self: auto;
+  justify-self: auto;
+  margin: 0;
+  transform: translateX(-50%);
+  background: rgba(23,23,26,.18);
+  border-color: rgba(255,255,255,.05);
+  box-shadow: 0 10px 26px rgba(0,0,0,.15);
+  backdrop-filter: blur(2px) saturate(1.02);
+  -webkit-backdrop-filter: blur(2px) saturate(1.02);
+}
+
+:root:not([data-theme="dark"]) .health-bottom-dock.compact-app-navigation {
+  background: rgba(252,252,255,.28);
+  border-color: rgba(20,20,24,.05);
+  box-shadow: 0 10px 24px rgba(54,39,75,.09);
+}
+
+.health-app-shell[data-shell-compact="true"] .health-brand,
+.health-app-shell[data-shell-compact="true"] .health-context-nav {
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .health-shell-header { padding-inline: 22px; }
+  .health-app-content,
+  .app-shell.health-app-shell .health-app-content { padding-inline: 22px; }
+  .health-utility-status { display: none; }
+  .health-utility-actions .one-ui-icon-button { width: 44px; height: 44px; }
+}
+
+@media (max-width: 640px) {
+  .health-shell-header { padding: 14px 14px 0; }
+  .health-app-content,
+  .app-shell.health-app-shell .health-app-content { padding: 138px 14px 118px; }
+  .health-brand__title { font-size: 25px; }
+  .health-context-nav { margin-top: 10px; }
+  .health-bottom-dock.compact-app-navigation { width: calc(100vw - 28px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-brand,
+  .health-context-nav { transition: none !important; }
+}
+
+/* Studio extends the approved contextual bar; its six sections stay readable
+   without borrowing unrelated glyphs. The same scroll fade remains in effect. */
+.health-context-nav[data-text-only="true"] {
+  grid-auto-columns: minmax(84px, 1fr);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.health-context-nav[data-text-only="true"]::-webkit-scrollbar { display: none; }
+.health-context-nav[data-text-only="true"] .health-context-item > span:last-child {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: nowrap;
+}
+.health-context-nav[data-text-only="true"] .health-context-item { padding-inline: 10px; }
+.health-bottom-dock.compact-app-navigation[data-destinations="4"] {
+  width: min(540px, calc(100% - 28px));
+}
+.health-utility-actions { flex-shrink: 0; }
+.health-utility-actions .one-ui-icon-button { flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .health-bottom-dock.compact-app-navigation[data-destinations="4"] button {
+    padding-inline: 6px;
+    gap: 6px;
+  }
+  .health-brand { min-width: 0; max-width: calc(100% - 190px); }
+  .health-brand__title { overflow: hidden; text-overflow: ellipsis; }
+  .health-brand__dot { display: none; }
+}
+@media (max-width: 420px) {
+  .health-bottom-dock.compact-app-navigation[data-destinations="4"] button {
+    flex-direction: column;
+    gap: 3px;
+  }
+}
+
+/* ========================================================================== 
+   Figma component conformance pass — 2026-09-10
+   Reuses the existing shared shell components but maps their rendered geometry
+   and surfaces closer to the One UI kit instead of treating the kit as a mood
+   reference only.
+
+   Sources: Containers 247:613 · Top Navigation 1549:2831 ·
+   In-App Navigation 1495:9649 · App Dock 1491:8142 ·
+   Top App Bar 1495:10992 · Floating Toolbar 1495:11133.
+   ========================================================================== */
+
+.health-app-shell {
+  --health-bg: #f1f1f3;
+  --health-nav: #fcfcff;
+  --health-selected: #eaeaea;
+  --health-chrome-bg: rgba(250,250,252,.38);
+  --health-chrome-border: rgba(20,20,24,.045);
+  --health-chrome-shadow: 0 5px 14px rgba(54,39,75,.045);
+  --health-chrome-selected: rgba(20,20,24,.075);
+  --health-chrome-hover: rgba(20,20,24,.05);
+  --health-chrome-filter: saturate(1.01);
+  background:
+    radial-gradient(900px 430px at 38% 100%, rgba(255,108,135,.12), transparent 62%),
+    radial-gradient(760px 420px at 74% 28%, rgba(100,91,238,.14), transparent 60%),
+    radial-gradient(520px 360px at 18% 60%, rgba(94,148,255,.08), transparent 67%),
+    var(--health-bg);
+}
+
+:root[data-theme="dark"] .health-app-shell {
+  --health-bg: #010102;
+  --health-nav: #17171a;
+  --health-selected: #2e2e30;
+  /* Samsung-like smoky translucent layer: lighter neutral tint + low alpha.
+     This keeps content behind the bars readable instead of darkening it. */
+  --health-chrome-bg: rgba(112,112,118,.38);
+  --health-chrome-border: rgba(255,255,255,.075);
+  --health-chrome-shadow: 0 6px 16px rgba(0,0,0,.075);
+  --health-chrome-selected: rgba(255,255,255,.11);
+  --health-chrome-hover: rgba(255,255,255,.065);
+  --health-chrome-filter: saturate(1.01);
+  background:
+    radial-gradient(900px 430px at 38% 100%, rgba(255,108,135,.20), transparent 62%),
+    radial-gradient(760px 420px at 74% 28%, rgba(100,91,238,.22), transparent 60%),
+    radial-gradient(520px 360px at 18% 60%, rgba(94,148,255,.10), transparent 67%),
+    var(--health-bg);
+}
+
+/* Top Navigation component: bounded/content-focused instead of a full-width
+   web tab strip. */
+.health-context-nav {
+  width: min(760px, 100%);
+  height: 54px;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  margin: 14px auto 0;
+  padding: 4px;
+  border: 1px solid var(--health-chrome-border);
+  border-radius: 27px;
+  background: var(--health-chrome-bg);
+  box-shadow: var(--health-chrome-shadow);
+  -webkit-backdrop-filter: var(--health-chrome-filter);
+  backdrop-filter: var(--health-chrome-filter);
+}
+
+.health-context-item {
+  min-height: 46px;
+  gap: 8px;
+  padding-inline: 14px;
+  border-radius: 23px;
+  color: var(--ou-color-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+}
+.health-context-item:hover { background: var(--health-chrome-hover); }
+.health-context-item.is-active {
+  background: var(--health-chrome-selected);
+  color: var(--ou-color-text);
+  box-shadow: none;
+}
+.health-context-item__icon,
+.health-context-item__icon > img,
+.health-context-item__icon svg {
+  width: 23px;
+  height: 23px;
+  flex-basis: 23px;
+}
+
+.health-context-nav[data-text-only="true"] {
+  width: min(760px, 100%);
+  grid-auto-columns: minmax(96px, 1fr);
+}
+
+/* Studio now uses exact Figma outline/filled icon pairs for all six contextual
+   destinations. Preserve labels on tablet/desktop, then let the existing
+   compact rule collapse to icon-only on narrow screens. */
+.health-app-shell[data-page="studio"] .health-context-nav { width: min(860px, 100%); }
+.health-app-shell[data-page="studio"] .health-context-item { padding-inline: 10px; gap: 7px; }
+@media (max-width: 900px) {
+  .health-app-shell[data-page="studio"] .health-context-item { padding-inline: 6px; }
+}
+
+/* Floating Toolbar / App Dock surface. At rest there is still no pill; the
+   exact container surface is revealed only through scroll progress. */
+.health-utility-actions::before {
+  border: 1px solid var(--health-chrome-border);
+  background: var(--health-chrome-bg);
+  box-shadow: var(--health-chrome-shadow);
+  -webkit-backdrop-filter: var(--health-chrome-filter);
+  backdrop-filter: var(--health-chrome-filter);
+}
+.health-utility-actions .one-ui-icon-button:hover,
+.health-utility-actions .one-ui-icon-button[aria-expanded="true"] {
+  background: var(--health-chrome-selected);
+}
+:root:not([data-theme="dark"]) .health-utility-actions .one-ui-icon-button:hover,
+:root:not([data-theme="dark"]) .health-utility-actions .one-ui-icon-button[aria-expanded="true"] {
+  background: var(--health-chrome-selected);
+}
+
+/* In-App Navigation/App Dock component. Keep the approved floating overlay
+   behavior, but use exact container/foreground tokens and compact geometry. */
+.health-bottom-dock.compact-app-navigation,
+.app-shell.health-app-shell .health-bottom-dock {
+  width: min(390px, calc(100% - 28px));
+  min-height: 64px;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--health-chrome-border);
+  border-radius: 32px;
+  background: var(--health-chrome-bg);
+  color: var(--ou-color-text);
+  box-shadow: var(--health-chrome-shadow);
+  -webkit-backdrop-filter: var(--health-chrome-filter);
+  backdrop-filter: var(--health-chrome-filter);
+}
+.health-bottom-dock.compact-app-navigation[data-destinations="4"] {
+  width: min(488px, calc(100% - 28px));
+}
+:root:not([data-theme="dark"]) .health-bottom-dock.compact-app-navigation {
+  color: #17171a;
+}
+.health-bottom-dock.compact-app-navigation button {
+  min-height: 56px;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 28px;
+  color: var(--ou-color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.health-bottom-dock.compact-app-navigation button:hover:not(.is-selected) {
+  background: var(--health-chrome-hover);
+}
+.health-bottom-dock.compact-app-navigation button.is-selected {
+  background: var(--health-chrome-selected);
+  color: var(--ou-color-text);
+}
+.health-bottom-dock .nav-destination__icon,
+.health-bottom-dock .nav-destination__icon svg,
+.health-bottom-dock .nav-destination__icon img {
+  width: 21px;
+  height: 21px;
+}
+.health-bottom-dock .nav-destination__label { font-size: 13px; font-weight: 600; }
+
+/* Canonical bottom-dock geometry across every page.
+   This intentionally outranks the older Devices-only Stage 1 overrides so
+   Devices, Monitor, Studio and Account keep identical icon/label coordinates. */
+.app-shell.health-app-shell[data-page] .health-bottom-dock.compact-app-navigation button {
+  min-height: 56px;
+  display: grid;
+  grid-template-rows: 21px 16px;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 4px 14px;
+  line-height: 1;
+}
+.app-shell.health-app-shell[data-page] .health-bottom-dock.compact-app-navigation .nav-destination__icon {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 21px;
+  line-height: 0;
+}
+.app-shell.health-app-shell[data-page] .health-bottom-dock.compact-app-navigation .nav-destination__icon svg,
+.app-shell.health-app-shell[data-page] .health-bottom-dock.compact-app-navigation .nav-destination__icon img {
+  width: 21px;
+  height: 21px;
+  display: block;
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+.app-shell.health-app-shell[data-page] .health-bottom-dock.compact-app-navigation .nav-destination__label {
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+@media (max-width: 640px) {
+  .health-context-nav,
+  .health-context-nav[data-text-only="true"] {
+    width: 100%;
+    margin-top: 10px;
+  }
+  .health-context-nav[data-text-only="true"] { grid-auto-columns: minmax(84px, 1fr); }
+  .health-bottom-dock.compact-app-navigation,
+  .health-bottom-dock.compact-app-navigation[data-destinations="4"] {
+    width: calc(100vw - 28px);
+  }
+}
+
+@media (forced-colors: active) {
+  .health-context-nav,
+  .health-bottom-dock.compact-app-navigation { border: 1px solid CanvasText; }
+}
+
+/* ========================================================================== 
+   Navigation icon state normalization — 2026-09-10
+   Persistent destinations follow the Samsung/One UI grammar observed in the
+   supplied Samsung Health reference: outline at rest, solid when selected.
+   Exact Figma SVGs remain the selected/source assets where locally available;
+   derived outline/filled fallbacks are isolated in assets/one-ui/derived until
+   their exact paired Figma variants can be exported.
+   ========================================================================== */
+.one-ui-state-glyph {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  opacity: .68;
+  transition: opacity var(--ou-motion-fast) var(--ou-ease-opacity-in),
+              transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+}
+.health-context-item.is-active .one-ui-state-glyph,
+.health-bottom-dock button.is-selected .one-ui-state-glyph {
+  opacity: 1;
+}
+.health-context-item:active .one-ui-state-glyph,
+.health-bottom-dock button:active .one-ui-state-glyph { transform: scale(.94); }
+:root:not([data-theme="dark"]) .one-ui-state-glyph { filter: brightness(0); }
+:root:not([data-theme="dark"]) .health-context-item:not(.is-active) .one-ui-state-glyph,
+:root:not([data-theme="dark"]) .health-bottom-dock button:not(.is-selected) .one-ui-state-glyph { opacity: .56; }
+
+/* Selected navigation should read through surface + filled glyph, not blue tint. */
+.health-context-item.is-active .health-context-item__icon,
+.health-bottom-dock button.is-selected .nav-destination__icon { color: var(--ou-color-text); }
+
+
+/* Canonical shared translucent chrome — 2026-09-10 review pass.
+   One token family drives contextual top nav, utility pill and bottom dock. */
+.app-shell.health-app-shell .one-ui-top-app-bar[data-elevated="true"] .one-ui-top-app-bar__actions {
+  border: 1px solid var(--health-chrome-border);
+  background: var(--health-chrome-bg);
+  box-shadow: var(--health-chrome-shadow);
+  -webkit-backdrop-filter: var(--health-chrome-filter);
+  backdrop-filter: var(--health-chrome-filter);
+}
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-utility-actions::before,
+.app-shell.health-app-shell .health-bottom-dock.compact-app-navigation {
+  border-color: var(--health-chrome-border);
+  background: var(--health-chrome-bg);
+  box-shadow: var(--health-chrome-shadow);
+  -webkit-backdrop-filter: var(--health-chrome-filter);
+  backdrop-filter: var(--health-chrome-filter);
+}
+.app-shell.health-app-shell .health-context-item:hover,
+.app-shell.health-app-shell .health-bottom-dock.compact-app-navigation button:hover:not(.is-selected) {
+  background: var(--health-chrome-hover);
+}
+.app-shell.health-app-shell .health-context-item.is-active,
+.app-shell.health-app-shell .health-bottom-dock.compact-app-navigation button.is-selected,
+.app-shell.health-app-shell .health-utility-actions .one-ui-icon-button:hover,
+.app-shell.health-app-shell .health-utility-actions .one-ui-icon-button[aria-expanded="true"] {
+  background: var(--health-chrome-selected);
+}
+
+/* ========================================================================== 
+   Top contextual navigation vertical alignment fix — 2026-09-10
+   Prevent grid-item stretching from shifting the selected fill on the Y axis.
+   Keep the approved chrome tokens unchanged; only normalize geometry.
+   ========================================================================== */
+.app-shell.health-app-shell .health-context-nav {
+  align-items: center;
+}
+
+.app-shell.health-app-shell .health-context-item {
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  align-self: center;
+  box-sizing: border-box;
+  margin-block: 0;
+}
+
+/* ========================================================================== 
+   Top contextual navigation optical centering correction — 2026-09-10
+   Pixel review shows the inner destination row renders ~1px below the visual
+   center of the outer pill. Apply a visual-only offset without changing the
+   approved height, color, transparency, or layout geometry.
+   ========================================================================== */
+.app-shell.health-app-shell .health-context-item {
+  position: relative;
+  top: -1px;
+}
+
+/* ========================================================================== 
+   Context navigation sizing + horizontal drag viewport — 2026-09-10
+   Keep each destination at one stable width. The container hugs short sets
+   (Account = one compact Overview item) and caps at a desktop viewport width;
+   larger sets scroll horizontally instead of compressing every destination.
+   ========================================================================== */
+.app-shell.health-app-shell {
+  --health-context-item-width: 184px;
+  --health-context-max-width: min(760px, calc(100vw - 84px));
+}
+
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+  width: max-content;
+  max-width: var(--health-context-max-width);
+  grid-auto-columns: var(--health-context-item-width);
+  justify-content: start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+
+.app-shell.health-app-shell .health-context-nav::-webkit-scrollbar { display: none; }
+.app-shell.health-app-shell .health-context-nav[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+.app-shell.health-app-shell .health-context-item {
+  width: var(--health-context-item-width);
+  min-width: var(--health-context-item-width);
+  max-width: var(--health-context-item-width);
+}
+
+/* The supplied Samsung dark reference uses a slightly darker selected region
+   than its smoky parent bar (~10% black overlay), not the lighter chip used by
+   the previous desktop pass. Keep active text/icons bright for contrast. */
+:root[data-theme="dark"] .app-shell.health-app-shell {
+  --health-chrome-selected: rgba(0,0,0,.10);
+  --health-chrome-hover: rgba(0,0,0,.055);
+}
+
+@media (max-width: 900px) {
+  .app-shell.health-app-shell {
+    --health-context-item-width: 168px;
+    --health-context-max-width: calc(100vw - 44px);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell.health-app-shell {
+    --health-context-item-width: 156px;
+    --health-context-max-width: calc(100vw - 28px);
+  }
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    width: max-content;
+    max-width: var(--health-context-max-width);
+  }
+}
+
+/* ========================================================================== 
+   Context navigation outer-width normalization — 2026-09-10
+   All multi-destination contextual bars share one viewport width. A single
+   destination (Account / Overview) remains compact. Overflowing tracks keep
+   the existing horizontal drag behavior instead of compressing destinations.
+   ========================================================================== */
+.app-shell.health-app-shell .health-context-nav[data-items]:not([data-items="1"]) {
+  width: var(--health-context-max-width);
+}
+
+/* Devices has four fixed-width destinations, slightly narrower than the shared
+   viewport. Center that track so the spare pixels are optically symmetric. */
+.app-shell.health-app-shell .health-context-nav[data-items="4"] {
+  justify-content: center;
+}
+
+/* Longer sets remain left-origin scroll tracks. */
+.app-shell.health-app-shell .health-context-nav[data-items="5"],
+.app-shell.health-app-shell .health-context-nav[data-items="6"] {
+  justify-content: start;
+}
+
+/* ========================================================================== 
+   Galaxy Store-style contextual navigation baseline — 2026-09-11
+   SmartGlove's secondary destinations are semantic labels rather than
+   self-explanatory glyphs. Keep the top contextual bar text-first, compact,
+   left-origin, and horizontally scrollable when its intrinsic track exceeds
+   the available shell width. Bottom navigation remains icon + label.
+   ========================================================================== */
+.app-shell.health-app-shell {
+  --health-context-max-width: min(760px, calc(100vw - 84px));
+  --health-context-tab-padding-x: 26px;
+}
+
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+  width: fit-content;
+  max-width: var(--health-context-max-width);
+  grid-auto-columns: max-content;
+  justify-content: start;
+  margin: 14px auto 0 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.app-shell.health-app-shell .health-context-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+.app-shell.health-app-shell .health-context-item,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"] .health-context-item,
+.app-shell.health-app-shell[data-page="studio"] .health-context-item {
+  width: auto;
+  min-width: max-content;
+  max-width: none;
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  padding-inline: var(--health-context-tab-padding-x);
+  gap: 0;
+  align-self: center;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+/* Contextual top navigation is deliberately text-only. Keep the icon API in
+   the component for future explicit opt-in, but do not let legacy responsive
+   rules collapse the labels or reserve glyph space in the current shell. */
+.app-shell.health-app-shell .health-context-item__icon {
+  display: none;
+}
+
+.app-shell.health-app-shell .health-context-item > span:last-child,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"] .health-context-item > span:last-child {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: nowrap;
+}
+
+/* The selected state keeps the approved smoky dark-mode treatment from the
+   preceding pass; geometry changes here only make the strip more Store-like. */
+:root[data-theme="dark"] .app-shell.health-app-shell {
+  --health-chrome-selected: rgba(0,0,0,.10);
+  --health-chrome-hover: rgba(0,0,0,.055);
+}
+
+@media (max-width: 900px) {
+  .app-shell.health-app-shell {
+    --health-context-max-width: calc(100vw - 44px);
+    --health-context-tab-padding-x: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell.health-app-shell {
+    --health-context-max-width: calc(100vw - 28px);
+    --health-context-tab-padding-x: 18px;
+  }
+
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    width: fit-content;
+    max-width: var(--health-context-max-width);
+    margin: 10px auto 0 0;
+    grid-auto-columns: max-content;
+  }
+
+  .app-shell.health-app-shell .health-context-item,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"] .health-context-item,
+  .app-shell.health-app-shell[data-page="studio"] .health-context-item {
+    font-size: 13px;
+  }
+}
+
+/* Supersede the previous equal-width multi-item normalization. Galaxy Store
+   behavior hugs the intrinsic text track until it reaches the viewport cap. */
+.app-shell.health-app-shell .health-context-nav[data-items]:not([data-items="1"]),
+.app-shell.health-app-shell .health-context-nav[data-items="4"],
+.app-shell.health-app-shell .health-context-nav[data-items="5"],
+.app-shell.health-app-shell .health-context-nav[data-items="6"] {
+  width: fit-content;
+  justify-content: start;
+}
+
+/* ========================================================================== 
+   Galaxy Store contextual nav — unified viewport width + horizontal track
+   2026-09-11
+   Use one canonical outer-bar length across screens. The destination track
+   keeps intrinsic text widths and scrolls horizontally when it exceeds the
+   viewport. This intentionally supersedes the preceding fit-content rules.
+   ========================================================================== */
+.app-shell.health-app-shell {
+  --health-context-viewport-width: min(520px, calc(100vw - 84px));
+}
+
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-items="1"],
+.app-shell.health-app-shell .health-context-nav[data-items]:not([data-items="1"]),
+.app-shell.health-app-shell .health-context-nav[data-items="4"],
+.app-shell.health-app-shell .health-context-nav[data-items="5"],
+.app-shell.health-app-shell .health-context-nav[data-items="6"] {
+  width: var(--health-context-viewport-width);
+  min-width: 0;
+  max-width: var(--health-context-viewport-width);
+  grid-auto-columns: max-content;
+  justify-content: start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.app-shell.health-app-shell .health-context-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+@media (max-width: 900px) {
+  .app-shell.health-app-shell {
+    --health-context-viewport-width: min(520px, calc(100vw - 44px));
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell.health-app-shell {
+    --health-context-viewport-width: calc(100vw - 28px);
+  }
+
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    width: var(--health-context-viewport-width);
+    max-width: var(--health-context-viewport-width);
+  }
+}
+
+/* ========================================================================== 
+   Context nav fixed viewport — distribute fitting destinations — 2026-09-11
+   Keep the approved canonical outer width. When 2–4 destinations fit inside
+   that viewport, distribute them evenly so no unused trailing lane remains.
+   Sets with 5+ destinations retain intrinsic-width horizontal scrolling.
+   ========================================================================== */
+.app-shell.health-app-shell .health-context-nav[data-items="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-columns: unset;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-items="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: unset;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-items="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-columns: unset;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-items="2"] .health-context-item,
+.app-shell.health-app-shell .health-context-nav[data-items="3"] .health-context-item,
+.app-shell.health-app-shell .health-context-nav[data-items="4"] .health-context-item {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-items="5"],
+.app-shell.health-app-shell .health-context-nav[data-items="6"] {
+  grid-template-columns: none;
+  grid-auto-columns: max-content;
+}
+
+
+/* ==========================================================================
+   Context navigation interaction + chrome-state regression fix — 2026-09-11
+   The Galaxy Store-style contextual selection is intentionally darker, while
+   utility and bottom-dock selections retain the previously approved lighter
+   One UI treatment. Keep the shared translucent base surface unchanged.
+   ========================================================================== */
+.app-shell.health-app-shell {
+  --health-context-selected: var(--health-chrome-selected);
+  --health-context-hover: var(--health-chrome-hover);
+}
+
+:root[data-theme="dark"] .app-shell.health-app-shell {
+  /* Restore the approved utility/dock interaction state. */
+  --health-chrome-selected: rgba(255,255,255,.11);
+  --health-chrome-hover: rgba(255,255,255,.065);
+
+  /* Context tabs keep the darker Samsung Store-style selected treatment. */
+  --health-context-selected: rgba(0,0,0,.10);
+  --health-context-hover: rgba(0,0,0,.055);
+}
+
+.app-shell.health-app-shell .health-context-item:hover {
+  background: var(--health-context-hover);
+}
+
+.app-shell.health-app-shell .health-context-item.is-active {
+  background: var(--health-context-selected);
+}
+
+/* ========================================================================== 
+   Context navigation persistence regression fix — tested 2026-09-11
+   Context destinations are section navigation, so the strip must remain
+   visible and interactive after selecting a section. Keep it in its own
+   header row rather than fading/locking it when shell content scrolls.
+   ========================================================================== */
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  will-change: auto;
+}
+
+.health-app-shell[data-shell-compact="true"] .health-context-nav {
+  pointer-events: auto;
+}
+
+/* ========================================================================== 
+   Galaxy Store-inspired shell morph — 2026-09-12
+   Expanded contextual navigation is content-like at rest. As the scroll
+   progress advances it rises into the app bar, contracts to the canonical
+   520px viewport, and reveals the approved smoky chrome surface. Optional
+   hero media participates in the same collapse without changing page logic.
+   ========================================================================== */
+.app-shell.health-app-shell {
+  --health-context-expanded-width: 760px;
+  --health-context-collapse-delta: 240px;
+  --health-context-collapse-distance: -64px;
+}
+
+.app-shell.health-app-shell[data-page="studio"] {
+  --health-context-expanded-width: 860px;
+  --health-context-collapse-delta: 340px;
+}
+
+.health-shell-header[data-has-hero="true"] {
+  height: 344px;
+}
+
+.app-shell.health-app-shell[data-has-hero="true"] {
+  --health-context-collapse-distance: -246px;
+}
+
+.app-shell.health-app-shell[data-has-hero="true"] .health-app-content {
+  padding-top: 344px;
+  scroll-padding-top: 92px;
+}
+
+.health-shell-hero {
+  position: absolute;
+  z-index: 24;
+  top: 86px;
+  left: 42px;
+  width: min(860px, calc(100vw - 84px));
+  height: 170px;
+  overflow: hidden;
+  border-radius: 28px;
+  opacity: var(--shell-hero-opacity, 1);
+  pointer-events: none;
+  transform: translateY(var(--shell-hero-offset-y, 0px));
+  transform-origin: left top;
+  will-change: opacity, transform;
+}
+
+.studio-shell-hero-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--collector-hairline) 65%, transparent);
+  border-radius: inherit;
+  background: var(--collector-surface);
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+}
+
+.studio-shell-hero-card::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(1,1,2,.62) 0%, rgba(1,1,2,.18) 42%, transparent 72%);
+  content: "";
+  pointer-events: none;
+}
+
+.studio-shell-hero-card > img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center 48%;
+  transform: scale(1.015);
+}
+
+
+
+/* Final override for the older persistence rule. The nav never disappears;
+   it moves and morphs continuously while remaining clickable. */
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+  position: absolute;
+  z-index: 60;
+  top: 88px;
+  left: 42px;
+  width: min(var(--shell-context-width, 520px), calc(100vw - 84px));
+  min-width: 0;
+  max-width: none;
+  height: 54px;
+  margin: 0;
+  padding: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(var(--shell-context-offset-y, 0px));
+  transform-origin: left center;
+  isolation: isolate;
+  will-change: width, transform;
+}
+
+.app-shell.health-app-shell[data-has-hero="true"] .health-context-nav,
+.app-shell.health-app-shell[data-has-hero="true"] .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-has-hero="true"][data-page="studio"] .health-context-nav {
+  top: 270px;
+}
+
+.app-shell.health-app-shell .health-context-nav::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border: 1px solid var(--health-chrome-border);
+  border-radius: 27px;
+  background: var(--health-chrome-bg);
+  box-shadow: var(--health-chrome-shadow);
+  -webkit-backdrop-filter: var(--health-chrome-filter);
+  backdrop-filter: var(--health-chrome-filter);
+  content: "";
+  opacity: var(--shell-collapse-progress);
+  pointer-events: none;
+  transform: none;
+  transform-origin: center;
+}
+
+.app-shell.health-app-shell .health-context-item {
+  position: relative;
+  z-index: 1;
+}
+
+/* Expanded state behaves like Store tabs: distribute destinations through the
+   available row. At the fully compact state longer sets return to intrinsic
+   columns so horizontal drag remains available rather than compressing text. */
+.app-shell.health-app-shell .health-context-nav[data-items="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.app-shell.health-app-shell .health-context-nav[data-items="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.app-shell.health-app-shell .health-context-nav[data-items="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.app-shell.health-app-shell .health-context-nav[data-items="5"] {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-columns: unset;
+}
+.app-shell.health-app-shell .health-context-nav[data-items="6"] {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-columns: unset;
+}
+
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav[data-items="5"],
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav[data-items="6"] {
+  grid-template-columns: none;
+  grid-auto-columns: max-content;
+}
+
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav {
+  pointer-events: auto;
+}
+
+@media (max-width: 900px) {
+  .health-shell-hero {
+    left: 22px;
+    width: min(760px, calc(100vw - 44px));
+  }
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    left: 22px;
+    width: min(var(--shell-context-width, 520px), calc(100vw - 44px));
+  }
+}
+
+@media (max-width: 640px) {
+  .health-shell-header[data-has-hero="true"] { height: 316px; }
+  .app-shell.health-app-shell[data-has-hero="true"] .health-app-content { padding-top: 316px; }
+  .health-shell-hero {
+    top: 78px;
+    left: 14px;
+    width: calc(100vw - 28px);
+    height: 150px;
+    border-radius: 24px;
+  }
+  .app-shell.health-app-shell[data-has-hero="true"] { --health-context-collapse-distance: -210px; }
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    top: 82px;
+    left: 14px;
+    width: calc(100vw - 28px);
+    transform: translateY(var(--shell-context-offset-y, 0px));
+  }
+  .app-shell.health-app-shell[data-has-hero="true"] .health-context-nav,
+  .app-shell.health-app-shell[data-has-hero="true"] .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-has-hero="true"][data-page="studio"] .health-context-nav {
+    top: 238px;
+    transform: translateY(var(--shell-context-offset-y, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-shell-hero,
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav::before {
+    transition: none !important;
+  }
+}
+
+/* Canonical width wins over older per-item viewport selectors. */
+.app-shell.health-app-shell .health-context-nav[data-items],
+.app-shell.health-app-shell .health-context-nav[data-items][data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav[data-items] {
+  width: min(var(--shell-context-width, 520px), calc(100vw - 84px)) !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+@media (max-width: 900px) {
+  .app-shell.health-app-shell .health-context-nav[data-items],
+  .app-shell.health-app-shell .health-context-nav[data-items][data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav[data-items] {
+    width: min(var(--shell-context-width, 520px), calc(100vw - 44px)) !important;
+  }
+}
+@media (max-width: 640px) {
+  .app-shell.health-app-shell .health-context-nav[data-items],
+  .app-shell.health-app-shell .health-context-nav[data-items][data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav[data-items] {
+    width: calc(100vw - 28px) !important;
+  }
+}
+
+/* ========================================================================== 
+   Context navigation morph v3 — approved 2026-09-12
+   - Expanded destinations are centered and evenly distributed with only the
+     selected destination carrying a light Store-style pill.
+   - Hero media is clipped from the bottom upward before navigation settles
+     into the compact header row.
+   - Compact chrome receives a protected header shelf so page content never
+     paints through the active destination.
+   - First/last destinations keep a safe inset and are clipped to the nav
+     viewport, preventing the Channels/Evaluate selection bleed regression.
+   ========================================================================== */
+.app-shell.health-app-shell {
+  --shell-context-left: 42px;
+  --shell-context-top: 88px;
+  --shell-hero-expanded-height: 170px;
+  --shell-hero-height: var(--shell-hero-expanded-height);
+}
+
+/* Protect the compact app bar from content scrolling underneath it. */
+.health-shell-header::after {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 92px;
+  background: color-mix(in srgb, var(--collector-canvas) 94%, transparent);
+  -webkit-backdrop-filter: blur(6px) saturate(1.01);
+  backdrop-filter: blur(6px) saturate(1.01);
+  content: "";
+  opacity: var(--shell-nav-chrome-opacity, 0);
+  pointer-events: none;
+}
+
+.health-topbar,
+.health-shell-hero,
+.app-shell.health-app-shell .health-context-nav {
+  z-index: 2;
+}
+
+.health-brand {
+  opacity: max(0, calc(1 - (var(--shell-collapse-progress) * 1.8)));
+  transform: translateY(-50%);
+}
+
+.health-shell-hero {
+  top: 86px;
+  left: 42px;
+  width: min(860px, calc(100vw - 84px));
+  height: var(--shell-hero-height);
+  opacity: var(--shell-hero-opacity, 1);
+  transform: none;
+  transform-origin: left top;
+  clip-path: inset(0 0 0 0 round 28px);
+  will-change: height, opacity;
+}
+
+.studio-shell-hero-card {
+  width: 100%;
+  height: var(--shell-hero-expanded-height);
+  min-height: var(--shell-hero-expanded-height);
+}
+
+/* The nav uses an absolute top/left computed from scroll progress instead of
+   translating over the hero/content. This keeps the two surfaces disjoint. */
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-page="studio"] .health-context-nav,
+.app-shell.health-app-shell[data-has-hero="true"] .health-context-nav,
+.app-shell.health-app-shell[data-has-hero="true"] .health-context-nav[data-text-only="true"],
+.app-shell.health-app-shell[data-has-hero="true"][data-page="studio"] .health-context-nav {
+  top: var(--shell-context-top) !important;
+  left: var(--shell-context-left) !important;
+  width: min(var(--shell-context-width, 520px), calc(100vw - 84px)) !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 54px;
+  padding: 4px 6px;
+  gap: 4px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none !important;
+  clip-path: inset(0 round 27px);
+  scroll-padding-inline: 12px;
+  will-change: top, left, width;
+}
+
+/* Parent chrome belongs only to the compact state. */
+.app-shell.health-app-shell .health-context-nav::before {
+  inset: 0;
+  border-radius: 27px;
+  opacity: var(--shell-nav-chrome-opacity, 0);
+}
+
+/* Store-like expanded navigation: equal destinations, centered labels, one
+   light selected pill. These declarations intentionally supersede the older
+   darker contextual-state tokens. */
+.app-shell.health-app-shell .health-context-nav[data-items="2"],
+.app-shell.health-app-shell .health-context-nav[data-items="3"],
+.app-shell.health-app-shell .health-context-nav[data-items="4"],
+.app-shell.health-app-shell .health-context-nav[data-items="5"],
+.app-shell.health-app-shell .health-context-nav[data-items="6"] {
+  grid-template-columns: repeat(var(--context-item-count, 1), minmax(0, 1fr));
+  grid-auto-columns: unset;
+  justify-content: stretch;
+}
+
+.app-shell.health-app-shell .health-context-nav[data-items="2"] { --context-item-count: 2; }
+.app-shell.health-app-shell .health-context-nav[data-items="3"] { --context-item-count: 3; }
+.app-shell.health-app-shell .health-context-nav[data-items="4"] { --context-item-count: 4; }
+.app-shell.health-app-shell .health-context-nav[data-items="5"] { --context-item-count: 5; }
+.app-shell.health-app-shell .health-context-nav[data-items="6"] { --context-item-count: 6; }
+
+.app-shell.health-app-shell .health-context-item,
+.app-shell.health-app-shell .health-context-nav[data-text-only="true"] .health-context-item,
+.app-shell.health-app-shell[data-page="studio"] .health-context-item {
+  top: 0;
+  width: calc(100% - 4px);
+  min-width: 0;
+  max-width: calc(100% - 4px);
+  height: 46px;
+  min-height: 46px;
+  max-height: 46px;
+  margin-inline: 2px;
+  padding-inline: 12px;
+  justify-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:root[data-theme="dark"] .app-shell.health-app-shell .health-context-item.is-active {
+  background: rgba(255,255,255,.13);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.045);
+}
+
+:root:not([data-theme="dark"]) .app-shell.health-app-shell .health-context-item.is-active {
+  background: rgba(20,20,24,.08);
+  color: var(--ou-color-text);
+  box-shadow: inset 0 0 0 1px rgba(20,20,24,.035);
+}
+
+.app-shell.health-app-shell .health-context-item:hover:not(.is-active) {
+  background: color-mix(in srgb, var(--ou-color-text) 5%, transparent);
+}
+
+/* Once compact, long sets may scroll horizontally, but every destination
+   retains a 12px safe scroll inset and the active fill remains clipped. */
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav[data-items="5"],
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav[data-items="6"] {
+  grid-template-columns: none;
+  grid-auto-columns: minmax(96px, max-content);
+  justify-content: start;
+}
+
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav[data-items="5"] .health-context-item,
+.app-shell.health-app-shell[data-shell-compact="true"] .health-context-nav[data-items="6"] .health-context-item {
+  width: auto;
+  min-width: 92px;
+  max-width: none;
+  margin-inline: 2px;
+  padding-inline: 18px;
+}
+
+/* Horizontal shared-axis motion for contextual destinations. The navigation
+   itself stays fixed; only the page viewport moves left/right. */
+.app-shell.health-app-shell .health-app-content {
+  view-transition-name: context-page;
+}
+
+::view-transition-group(context-page) {
+  animation-duration: 280ms;
+  animation-timing-function: cubic-bezier(.2, 0, 0, 1);
+}
+
+:root[data-context-direction="forward"]::view-transition-old(context-page) {
+  animation: 280ms cubic-bezier(.2, 0, 0, 1) both context-page-old-forward;
+}
+:root[data-context-direction="forward"]::view-transition-new(context-page) {
+  animation: 280ms cubic-bezier(.2, 0, 0, 1) both context-page-new-forward;
+}
+:root[data-context-direction="backward"]::view-transition-old(context-page) {
+  animation: 280ms cubic-bezier(.2, 0, 0, 1) both context-page-old-backward;
+}
+:root[data-context-direction="backward"]::view-transition-new(context-page) {
+  animation: 280ms cubic-bezier(.2, 0, 0, 1) both context-page-new-backward;
+}
+
+@keyframes context-page-old-forward {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-10%); opacity: .28; }
+}
+@keyframes context-page-new-forward {
+  from { transform: translateX(12%); opacity: .42; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes context-page-old-backward {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(10%); opacity: .28; }
+}
+@keyframes context-page-new-backward {
+  from { transform: translateX(-12%); opacity: .42; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 900px) {
+  .health-shell-hero {
+    left: 22px;
+    width: min(760px, calc(100vw - 44px));
+  }
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    width: min(var(--shell-context-width, 520px), calc(100vw - 44px)) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell.health-app-shell { --shell-hero-expanded-height: 150px; }
+  .health-shell-hero {
+    top: 78px;
+    left: 14px;
+    width: calc(100vw - 28px);
+    border-radius: 24px;
+    clip-path: inset(0 round 24px);
+  }
+  .health-shell-header::after { height: 78px; }
+  .app-shell.health-app-shell .health-context-nav,
+  .app-shell.health-app-shell .health-context-nav[data-text-only="true"],
+  .app-shell.health-app-shell[data-page="studio"] .health-context-nav {
+    width: min(var(--shell-context-width, calc(100vw - 28px)), calc(100vw - 28px)) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(context-page),
+  ::view-transition-new(context-page) {
+    animation-duration: 1ms !important;
+  }
+}
+
+
+/* ==========================================================================
+   Transparent chrome restoration — 2026-09-12
+   Keep the pre-morph One UI behavior: content remains visible beneath the
+   floating top chrome. Individual nav/utility pills provide their own
+   translucent surfaces; the header itself never paints an opaque shelf.
+   ========================================================================== */
+.health-shell-header::after {
+  display: none !important;
+  content: none !important;
+}
+.health-shell-header {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Dedicated subpages should not retain legacy section-scroll geometry. */
+.health-device-page[data-subpage],
+.health-live-page[data-subpage] {
+  min-height: 100%;
+}
+.health-live-workspace[data-subview="signals"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.health-live-workspace[data-subview="channels"] {
+  grid-template-columns: minmax(320px, 520px);
+  justify-content: start;
+}
+.health-live-workspace[data-subview="channels"] .health-live-channels {
+  width: 100%;
+  max-width: 520px;
+}
+
+/* ========================================================================== 
+   Top chrome stacking + direct subpage motion hotfix — 2026-09-12
+   The top bar stays transparent and does not intercept the contextual nav.
+   Its utility/Now Bar children paint above the contextual strip, preventing
+   nav labels from bleeding through an expanded Now Bar surface.
+   ========================================================================== */
+.app-shell.health-app-shell .health-topbar {
+  z-index: 90 !important;
+  pointer-events: none !important;
+}
+.app-shell.health-app-shell .health-utility {
+  pointer-events: auto;
+}
+.app-shell.health-app-shell .health-utility-status,
+.app-shell.health-app-shell .runtime-now-bar-anchor,
+.app-shell.health-app-shell .health-utility-actions {
+  pointer-events: auto;
+}
+.app-shell.health-app-shell .health-context-nav {
+  z-index: 60 !important;
+}
+.app-shell.health-app-shell .health-shell-hero {
+  z-index: 1 !important;
+}
+
+/* Browser View Transition snapshots were too expensive for chart-heavy pages
+   and could visibly stall before switching. Context changes now animate the
+   live content DOM directly from shell.tsx. */
+.app-shell.health-app-shell .health-app-content {
+  view-transition-name: none !important;
+}
+
+/* ========================================================================== 
+   Top chrome hover stability — 2026-09-12
+   Keep header/nav/utility geometry in stable compositor/layout contexts so
+   hover paint changes never promote/demote the Account content underneath.
+   ========================================================================== */
+.app-shell.health-app-shell .health-shell-header {
+  contain: layout style;
+}
+.app-shell.health-app-shell .health-topbar,
+.app-shell.health-app-shell .health-context-nav,
+.app-shell.health-app-shell .health-utility,
+.app-shell.health-app-shell .health-utility-actions {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}

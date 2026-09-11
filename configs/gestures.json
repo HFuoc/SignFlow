@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "gestures": [
+    {
+      "id": "open_hand",
+      "display_name": "Xòe bàn tay",
+      "active": true
+    },
+    {
+      "id": "closed_fist",
+      "display_name": "Nắm tay",
+      "active": true
+    },
+    {
+      "id": "point_index",
+      "display_name": "Chỉ ngón trỏ",
+      "active": true
+    },
+    {
+      "id": "thumbs_up",
+      "display_name": "Ngón cái hướng lên",
+      "active": true
+    },
+    {
+      "id": "pinch",
+      "display_name": "Chụm ngón",
+      "active": true
+    }
+  ]
+}
+

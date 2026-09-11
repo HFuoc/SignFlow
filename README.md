@@ -1,142 +1,142 @@
-# SmartGlove Dataset Studio
+# SignFlow — SmartGlove Dataset Studio
 
-Ứng dụng desktop chuẩn bị dataset cảm biến cho dự án găng tay nhận diện cử chỉ. React + FastAPI + PyWebView là collector mặc định; PySide6 được giữ làm rollback rõ ràng. Cả hai hiện chỉ dùng simulator; chưa đọc ESP32, chưa ghi dataset và không train model.
+Ứng dụng desktop cho dự án găng tay nhận diện cử chỉ, dùng React, FastAPI và PyWebView. Hiện chạy hai găng **mô phỏng**, có tài khoản cục bộ và biểu đồ 13 kênh cảm biến. Không cần găng thật hoặc GPU để chạy thử.
 
-## Yêu cầu
+Studio có Overview, Dataset, MediaPipe, Train, Evaluate và Translate nhưng hiện chỉ là giao diện và cấu hình tạm trong bộ nhớ. Chưa có kết nối ESP32/Serial/BLE, ghi dataset, camera/MediaPipe, huấn luyện hoặc suy luận.
 
-- Windows 10/11.
-- Python 3.12 và `uv`.
-- Node.js 20+ và npm để build/test React collector.
-- Không cần GPU.
+## 1. Yêu cầu trên Windows
 
-## Cài Python
+- Windows 10/11, PowerShell, Git và `uv`.
+- Python **3.12** (launcher yêu cầu đúng phiên bản).
+- Node.js **22.12+ trong nhánh 22** hoặc **24.x**, kèm npm.
+- Microsoft Edge WebView2 Runtime để mở cửa sổ desktop; Edge cho E2E mặc định.
+- Internet khi tải dependency lần đầu.
+
+Nếu chưa có công cụ, có thể cài bằng Windows Package Manager:
 
 ```powershell
+winget install --id Git.Git -e
+winget install --id astral-sh.uv -e
+winget install --id OpenJS.NodeJS.LTS -e
+winget install --id Microsoft.EdgeWebView2Runtime -e
+```
+
+Mở lại PowerShell và kiểm tra `git --version`, `uv --version`, `node --version`, `npm.cmd --version`.
+
+## 2. Tải source và cài dependency
+
+```powershell
+git clone https://github.com/HFuoc/SignFlow.git
+Set-Location SignFlow
 uv python install 3.12
 uv venv --python 3.12 .venv
 uv pip install --python .\.venv\Scripts\python.exe -e ".[test]"
+Push-Location app\desktop_collector\web
+npm.cmd ci
+Pop-Location
 ```
 
-## Chạy React/PyWebView collector mặc định
+Chỉ tạo `.venv` nếu thư mục đó chưa tồn tại. Không cần activate môi trường; các lệnh dùng Python trực tiếp trong `.venv`. `npm.cmd ci` cài theo `package-lock.json`, không dùng thư mục `node_modules` chép từ máy khác.
 
-Launcher build source React mới nhất rồi mở PyWebView:
+## 3. Chạy app
+
+Từ thư mục gốc `SignFlow`:
 
 ```powershell
 .\run_app.ps1
 ```
 
-Lần chạy đầu tiên, ứng dụng yêu cầu tạo đúng một quản trị viên cục bộ; không có username
-hay password mặc định. Các lần sau đăng nhập bằng account đã được administrator cấp.
-Identity database nằm trong user-data directory của hệ điều hành, không nằm trong repo.
-
-Dùng lại production build hiện có:
+Launcher build React rồi mở PyWebView; không tự cài dependency. Không cần mở backend riêng. Nếu PowerShell chặn script, cho phép riêng terminal hiện tại rồi chạy lại:
 
 ```powershell
-.\run_app.ps1 -SkipBuild
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\run_app.ps1
 ```
 
-Nếu build bị thiếu, `-SkipBuild` sẽ dừng và yêu cầu chạy lại lệnh mặc định. Launcher
-không tự chạy `npm install` hoặc `npm ci`.
+Sau khi build thành công, mở nhanh bằng `.\run_app.ps1 -SkipBuild`. Sau khi cập nhật frontend, chạy không kèm `-SkipBuild` để build source mới.
 
-PySide rollback:
+### Lần đầu và sử dụng thử
+
+1. Tạo quản trị viên cục bộ ở màn hình setup. Không có username/password mặc định; mật khẩu tối thiểu 12 ký tự.
+2. Đăng nhập; quản trị viên có thể tạo tài khoản và phân quyền. Role `participant` không được vào collector.
+3. Mở **Devices**, kết nối nguồn mô phỏng trái/phải; chỉnh sample rate, noise và packet loss nếu cần.
+4. Mở **Monitor** để xem 13 kênh. Pause chỉ dừng hiển thị, acquisition vẫn tiếp tục. Có bật/tắt đường, đổi cửa sổ thời gian, zoom và trở lại live.
+5. Khám phá **Studio** và Search; các chức năng dataset/ML chưa triển khai không tạo kết quả nhận diện.
+6. Đóng cửa sổ để dừng worker và local server.
+
+Tài khoản lưu ngoài repo tại `%LOCALAPPDATA%\SmartGlove Dataset Studio\smartglove.sqlite3`. Cập nhật source không xóa tài khoản; không upload database hoặc dữ liệu cá nhân. Xem [xác thực và phân quyền](docs/AUTH_PERSISTENCE.md).
+
+## 4. Development với Vite
+
+Dùng hai terminal, ban đầu đều ở thư mục gốc repo.
+
+Terminal 1:
+
+```powershell
+Set-Location app\desktop_collector\web
+npm.cmd run dev -- --host 127.0.0.1 --port 5173
+```
+
+Terminal 2:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.desktop_collector.shell --dev --vite-origin http://127.0.0.1:5173
+```
+
+Dùng đúng `127.0.0.1`, không đổi thành `localhost` hoặc `0.0.0.0`. Shell tạo bridge trên cổng động và thực hiện xác thực; chỉ mở Vite trong trình duyệt không thay thế đầy đủ luồng desktop.
+
+## 5. Kiểm thử và đường lui PySide
+
+Sau setup, từ thư mục gốc:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+Push-Location app\desktop_collector\web
+npm.cmd test
+npm.cmd run build
+npm.cmd run test:e2e
+Pop-Location
+.\run_app.ps1 -SkipBuild -SmokeTest
+.\run_app.ps1 -Legacy -SmokeTest
+```
+
+E2E mặc định dùng Edge trên Windows, cần cổng 5173 trống. CI dùng Chromium của Playwright: chạy `npx.cmd playwright install chromium` trong thư mục web và đặt `CI=1`. Smoke xác minh khởi động/tắt hữu hạn, không thay thế review giao diện.
+
+Đường lui PySide6 được giữ:
 
 ```powershell
 .\run_app.ps1 -Legacy
 .\run_app.ps1 -Legacy -NoAutoConnect
 ```
 
-Thêm `-SmokeTest` vào lệnh mặc định, `-SkipBuild` hoặc `-Legacy` để chạy smoke hữu hạn.
+`-NoAutoConnect` chỉ hỗ trợ PySide; `-SkipBuild` chỉ hỗ trợ React/PyWebView.
 
-## Development React collector
+## 6. Xử lý lỗi
 
-Cài dependency web một lần:
+| Hiện tượng | Cách xử lý |
+| --- | --- |
+| Thiếu `.venv` hoặc Python sai phiên bản | Kiểm tra `.\.venv\Scripts\python.exe --version`; cài Python 3.12 và dependency vào đúng môi trường. |
+| Không tìm thấy npm | Cài Node.js, mở lại terminal, kiểm tra `npm.cmd --version`. |
+| Thiếu `vite/client`, Rollup hoặc `node_modules` | Chạy `npm.cmd ci` tại `app\desktop_collector\web`. |
+| `-SkipBuild` báo thiếu bundle | Chạy `.\run_app.ps1` để tạo build. |
+| Cửa sổ web không mở | Kiểm tra WebView2 Runtime; chạy từ PowerShell để xem lỗi. |
+| Development báo lỗi origin/kết nối | Dùng chính xác hai lệnh development và kiểm tra cổng 5173. |
+| Đăng nhập nhưng không thấy collector | Kiểm tra role; `participant` có quyền truy cập giới hạn. |
 
-```powershell
-Set-Location app\desktop_collector\web
-npm install
+## 7. Cấu trúc source
+
+```text
+app/desktop_collector/       Core Python, simulator, auth, bridge và shell
+app/desktop_collector/web/   React/Vite và kiểm thử web
+app/frontend/desktop/assets/ Asset và giấy phép font
+app/frontend/shared/one-ui/  Token và motion CSS dùng chung
+configs/gestures.json        Danh mục cử chỉ
+tests/                      Kiểm thử Python
+docs/                       Tài liệu kỹ thuật
+pyproject.toml              Dependency Python
+run_app.ps1                 Launcher Windows
 ```
 
-Development cần hai PowerShell. Terminal 1:
+Repo không chứa APK, patch, backup nén, môi trường Python, `node_modules`, build, ảnh test hoặc dữ liệu người dùng. Build được tạo bằng setup ở trên. Giữ nguyên cấu trúc asset vì React và PySide đều sử dụng các đường dẫn này.
 
-```powershell
-Set-Location app\desktop_collector\web
-npm run dev -- --host 127.0.0.1 --port 5173
-```
-
-Terminal 2, từ repository root:
-
-```powershell
-.\.venv\Scripts\python.exe -m app.desktop_collector.shell --dev --vite-origin http://127.0.0.1:5173
-```
-
-Có thể build và mở shell production trực tiếp khi chẩn đoán:
-
-```powershell
-Set-Location app\desktop_collector\web
-npm run build
-Set-Location ..\..\..
-.\.venv\Scripts\python.exe -m app.desktop_collector.shell
-```
-
-`web/build/`, `node_modules/`, coverage và Playwright artifacts đều bị Git ignore. Production build được giữ local để `-SkipBuild` sử dụng và không được commit.
-
-## Local security boundary
-
-- Server chỉ bind `127.0.0.1` trên port trống được chọn lúc chạy.
-- Mỗi shell tạo token ngẫu nhiên trong RAM. Fragment mang token được React đọc một lần rồi xóa khỏi URL; token không vào storage hoặc log.
-- User session là lớp riêng: opaque credential trong cookie HttpOnly/SameSite, server giữ
-  hash, expiry/revocation và role; không lưu trong browser storage hay URL.
-- REST điều khiển và WebSocket telemetry đều xác thực bridge token, user session, Host,
-  Origin và quyền tương ứng.
-- Development mode vẫn giữ toàn bộ bảo vệ và không dùng CORS wildcard.
-- Đóng cửa sổ sẽ dừng simulator, acquisition workers, WebSocket và Uvicorn.
-
-## Chức năng hiện có
-
-- Device Manager cho hai găng mô phỏng độc lập, connect/disconnect, seed, noise, sample rate và packet loss.
-- Live Monitor cho 13 kênh raw, sample rate, packet loss, standard deviation, peak-to-peak và trạng thái kênh.
-- Bật/tắt từng đường, cửa sổ 5/10/30/60 giây, cursor/drag zoom, reset live và pause chart mà không dừng acquisition.
-- Light/dark, keyboard focus, reduced-motion và ký hiệu `L/R` + nét liền/đứt ngoài màu sắc.
-- First-run administrator, login/logout, account/password flow và khôi phục session cục bộ.
-- RBAC `participant`/`researcher`/`administrator`/`developer`; administrator có user
-  management và authentication audit, participant có account/access-limited screen.
-- P.2.1 Runtime Activity: Now Bar cho trạng thái telemetry/pause/kết nối hiện tại và
-  Notification Center RAM-only (tối đa 50 mục) với unread/read/dismiss/clear, action dựa
-  trên command hiện có và kết quả quản trị lọc theo role. Tính năng này không ghi dataset.
-
-## Kiểm thử
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest
-.\.venv\Scripts\python.exe -m app.desktop_collector.main --smoke-test
-.\.venv\Scripts\python.exe -m app.desktop_collector.shell --smoke-test
-
-Set-Location app\desktop_collector\web
-npm test
-npm run build
-npm run test:e2e
-```
-
-Ảnh review P.1 nằm trong `.design-cache/artifacts/product-p1/` và không được Git track.
-Bốn ảnh review P.2.1 và manifest/verification nằm trong
-`.design-cache/artifacts/product-p2-1/`; automated browser gate đã đạt, visual gate đang
-chờ người dùng duyệt.
-
-## Ranh giới hiện tại
-
-- D.2.6 Stage 2B.3.1 và One UI V.2.1/P.1 hiện tại đã được user duyệt visual; implementation
-  hiện tại là visual baseline và không cần refinement bổ sung. F42/F43/F44 tiếp tục frozen;
-  human NVDA/Narrator spoken-output vẫn chưa được xác minh.
-- M1.1 còn mở vì Phase E cleanup cần phê duyệt và hoàn tất riêng. Chỉ P.2.1 Runtime
-  Activity đã được duyệt và triển khai, automated suites đạt và đang chờ visual approval;
-  phần P.2 khác, V.3,
-  Phase E và M2 chưa bắt đầu. PySide UI, Qt adapter và dependency Qt được giữ nguyên.
-- Không có firmware, Serial/COM, protocol v1 hoặc legacy adapter.
-- P.1 chỉ persist identity/auth; chưa có Data Capture, raw dataset persistence,
-  participant collection, Calibration, Dataset Browser hay Filter Preview.
-- Không có PyTorch, TensorFlow hoặc code train model.
-- Không sửa prototype người dùng tại `app/frontend/index.html`, `app/frontend/desktop/` hoặc `app/frontend/mobile/`.
-
-Xem [PRODUCT_CONTEXT](docs/PRODUCT_CONTEXT.md), [ARCHITECTURE](docs/ARCHITECTURE.md),
-[AUTH_PERSISTENCE](docs/AUTH_PERSISTENCE.md), [DATA_SCHEMA](docs/DATA_SCHEMA.md),
-[ASSET_INVENTORY](docs/ASSET_INVENTORY.md) và [SESSION_LOG](docs/SESSION_LOG.md).
+Tài liệu: [kiến trúc](docs/ARCHITECTURE.md), [hợp đồng dữ liệu](docs/DATA_SCHEMA.md), [xác thực](docs/AUTH_PERSISTENCE.md), [nguồn asset](docs/ASSET_INVENTORY.md).

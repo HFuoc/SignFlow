@@ -1,0 +1,241 @@
+.runtime-now-bar-anchor { position: relative; z-index: 75; width: 160px; max-width: calc(100vw - 32px); height: 38px; flex: 0 0 auto; }
+
+/* Compact header adaptation of One UI Now Bar 744:3579. The same surface
+   grows from its right edge, translates below the header, and crossfades content. */
+.runtime-now-bar {
+  --now-accent: var(--ou-color-text-muted);
+  --runtime-now-bar-expanded-width: 360px;
+  --runtime-now-bar-expanded-height: 288px;
+  position: relative;
+  z-index: 1;
+  width: var(--runtime-now-bar-anchor-width, 100%);
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--ou-color-text) 6%, transparent);
+  border-radius: 53px;
+  background: color-mix(in srgb, var(--collector-surface) 76%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px #00000008;
+  color: var(--ou-color-text);
+  overflow: hidden;
+  isolation: isolate;
+  transform-origin: top right;
+  transform: translate(0, 0);
+  transition:
+    width var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    height var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    transform var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    border-radius var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    background-color var(--ou-motion-standard) ease,
+    border-color var(--ou-motion-standard) ease,
+    box-shadow var(--ou-motion-fast) ease-out,
+    opacity var(--ou-motion-fast) var(--ou-ease-opacity-out);
+}
+.runtime-now-bar[data-phase="collapsed"] { transition-property: background-color, border-color, box-shadow; }
+.runtime-now-bar[data-state="live"] { --now-accent: #47cba0; }
+.runtime-now-bar[data-state="connecting"] { --now-accent: var(--ou-color-accent); }
+.runtime-now-bar[data-state="degraded"] { --now-accent: var(--ou-color-warning); }
+:root[data-theme="dark"] .runtime-now-bar { background-color: rgba(35, 37, 40, .86); border-color: rgba(255, 255, 255, .05); }
+:root:not([data-theme="dark"]) .runtime-now-bar[data-state="live"] { --now-accent: #16835f; }
+.runtime-now-bar[data-overlay] {
+  position: absolute; z-index: 37;
+  top: 0; right: 0;
+  width: var(--runtime-now-bar-anchor-width); height: var(--runtime-now-bar-anchor-height);
+}
+.runtime-now-bar[data-phase="open"] {
+  transform: translate(var(--runtime-now-bar-shift-x, -8px), var(--runtime-now-bar-shift-y, 46px));
+  width: var(--runtime-now-bar-expanded-width);
+  height: min(var(--runtime-now-bar-expanded-height), var(--runtime-now-bar-available-height));
+  border-radius: 28px;
+  box-shadow: 0 6px 20px #00000018;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+/* Intermediate morph bounds are not a reason to create a scroll container.
+   Keep native scrolling when the measured content truly exceeds the viewport. */
+.runtime-now-bar[data-phase="open"][data-constrained="true"] { overflow-y: auto; }
+.runtime-now-bar[data-suppressed],
+body:has(.one-ui-overlay-layer) .runtime-now-bar { opacity: 0; pointer-events: none; }
+
+.runtime-now-bar__summary {
+  position: absolute; inset: 0 0 auto; z-index: 3;
+  width: 100%; height: 38px; padding: 0;
+  border: 0; border-radius: inherit;
+  background: transparent; color: inherit; cursor: pointer;
+  transition: height var(--ou-motion-standard) var(--ou-ease-basic-transform);
+}
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__summary { height: 64px; }
+.runtime-now-bar__summary:hover { background: color-mix(in srgb, var(--ou-color-text) 3%, transparent); }
+.runtime-now-bar__summary:active { background: color-mix(in srgb, var(--ou-color-accent) 12%, transparent); }
+.runtime-now-bar__summary:focus-visible { box-shadow: inset 0 0 0 3px var(--focus); }
+.runtime-now-bar__shared {
+  position: absolute; z-index: 4; pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition:
+    opacity var(--ou-motion-fast) ease,
+    visibility 0s linear var(--ou-motion-fast),
+    top var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    left var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    right var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    width var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    height var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    font-size var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    letter-spacing var(--ou-motion-standard) var(--ou-ease-basic-transform);
+}
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__shared { opacity: 1; visibility: visible; transition-delay: 60ms; }
+.runtime-now-bar__compact { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 12px; white-space: nowrap; transition: opacity var(--ou-motion-fast) ease, visibility 0s linear var(--ou-motion-fast); }
+.runtime-now-bar__compact > strong { font-weight: 600; }
+.runtime-now-bar__compact > span { margin-left: auto; font-variant-numeric: tabular-nums; font-size: 12px; }
+.runtime-now-bar__compact small { font-size: 10px; color: var(--ou-color-text-muted); }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__compact { opacity: 0; visibility: hidden; }
+.health-utility .runtime-now-bar__compact,
+.health-utility .runtime-now-bar__compact *,
+.health-utility .runtime-now-bar__shared,
+.health-utility .runtime-now-bar__shared * { pointer-events: none; }
+.runtime-now-bar__icon {
+  left: 12px; top: 11px; width: 40px; height: 40px;
+  display: grid; place-items: center; border-radius: 50%;
+  color: var(--now-accent); background: color-mix(in srgb, var(--now-accent) 17%, transparent);
+  transition: background-color var(--ou-motion-standard) ease, color var(--ou-motion-standard) ease,
+    top var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    left var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    width var(--ou-motion-standard) var(--ou-ease-basic-transform),
+    height var(--ou-motion-standard) var(--ou-ease-basic-transform);
+}
+.runtime-now-bar__icon img { width: 24px; height: 24px; object-fit: contain; }
+:root:not([data-theme="dark"]) .runtime-now-bar__icon img { filter: brightness(0); }
+.runtime-now-bar__live-dot { position: absolute; right: -1px; bottom: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--now-accent); box-shadow: 0 0 0 3px var(--collector-surface); transition: background-color var(--ou-motion-standard) ease; }
+.runtime-now-bar__compact .runtime-now-bar__live-dot { position: static; flex: 0 0 6px; width: 6px; height: 6px; box-shadow: none; }
+.runtime-now-bar[data-state="live"] .runtime-now-bar__live-dot,
+.runtime-now-bar[data-state="connecting"] .runtime-now-bar__live-dot { animation: telemetry-breathe 3s ease-in-out infinite; }
+@keyframes telemetry-breathe { 0%, 100% { opacity: .7; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
+.runtime-now-bar__identity { left: 64px; top: 12px; max-width: calc(100% - 138px); font-size: 15px; line-height: 20px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.runtime-now-bar__description { left: 64px; top: 35px; max-width: calc(100% - 134px); font-size: 11px; line-height: 16px; color: var(--ou-color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.runtime-now-bar__rate { right: 16px; top: 12px; width: 54px; text-align: right; font-size: 19px; line-height: 1.2; font-weight: 600; letter-spacing: -.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.runtime-now-bar__rate strong { font-weight: inherit; }
+.runtime-now-bar__rate > span { display: block; margin-top: 2px; font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--ou-color-text-muted); }
+.runtime-now-bar__availability { right: 18px; top: 83px; opacity: 0; visibility: hidden; font-size: 12px; line-height: 20px; color: var(--ou-color-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.runtime-now-bar__expanded-label { display: none; }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__expanded-label { display: inline; }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__icon { left: 16px; }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__identity { left: 68px; max-width: calc(100% - 86px); }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__description { left: 68px; max-width: calc(100% - 86px); font-size: 12px; }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__rate { right: calc(100% - 118px); top: 76px; width: 100px; text-align: left; font-size: 26px; letter-spacing: -.6px; }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__rate > span { display: inline; font-size: 12px; margin: 0; }
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__availability { opacity: 1; visibility: visible; }
+.runtime-now-bar__details {
+  position: relative;
+  width: calc(var(--runtime-now-bar-expanded-width) - 2px);
+  padding: 116px 18px 14px;
+  opacity: 0; visibility: hidden; transform: translateY(4px);
+  transition: opacity var(--ou-motion-fast) ease-in, transform var(--ou-motion-standard) var(--ou-ease-basic-transform), visibility 0s linear var(--ou-motion-standard);
+}
+.runtime-now-bar[data-phase="open"] .runtime-now-bar__details { opacity: 1; visibility: visible; transform: none; transition: opacity var(--ou-motion-fast) ease-out, transform var(--ou-motion-standard) var(--ou-ease-basic-transform), visibility 0s; }
+.runtime-now-bar__packet-health { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding-top: 8px; color: var(--ou-color-text-muted); font-size: 11px; }
+.runtime-now-bar__packet-health strong { margin-left: 6px; color: var(--ou-color-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.runtime-now-bar__sources { display: grid; font-size: 12px; }
+.runtime-now-bar__sources > div { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; min-height: 40px; align-items: center; gap: 8px; padding: 5px 0; }
+.runtime-now-bar__source-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.runtime-now-bar__source-name small { margin-left: 5px; font-size: 9px; color: var(--ou-color-text-muted); font-weight: 500; }
+.runtime-now-bar__hand { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid var(--ou-color-text-muted); border-radius: 6px; font-weight: 600; font-size: 10px; }
+.runtime-now-bar__hand.right { border-style: dashed; border-radius: 50%; }
+.runtime-now-bar__source-rate { color: var(--ou-color-text-muted); font-variant-numeric: tabular-nums; }
+.runtime-now-bar__source-rate { text-align: right; font-size: 12px; }
+.runtime-now-bar__chart-state,
+.runtime-now-bar__exception { margin: 8px 0 0; font-size: 11px; line-height: 1.4; color: var(--ou-color-text-muted); overflow-wrap: anywhere; }
+.runtime-now-bar__exception { color: var(--ou-color-warning); }
+.runtime-now-bar__actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 2px; margin-top: 10px; border-radius: 20px; background: color-mix(in srgb, var(--ou-color-text) 4%, transparent); }
+.runtime-now-bar__actions .one-ui-button { min-width: 0; min-height: 40px; height: 40px; padding: 0 8px; font-size: 12px; font-weight: 500; border-radius: 20px; }
+
+.runtime-activity-mark {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  color: var(--ou-color-text-muted);
+}
+.runtime-activity-mark[data-severity="info"] { border-radius: 50%; color: var(--ou-color-accent); }
+.runtime-activity-mark[data-severity="success"] { border-radius: 50%; color: var(--ou-color-success); background: currentColor; }
+.runtime-activity-mark[data-severity="warning"] { border-style: dashed; color: var(--ou-color-warning); }
+.runtime-activity-mark[data-severity="error"] { border-radius: 3px; color: var(--ou-color-danger); transform: rotate(45deg); }
+
+.notification-center { display: grid; gap: 14px; padding-top: 14px; }
+.quick-notification-row { display: flex; justify-content: flex-end; padding-top: 16px; }
+.quick-notification-row .one-ui-button { width: 100%; }
+.notification-center__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notification-center__toolbar > span { color: var(--ou-color-text-muted); font-size: 14px; font-weight: 500; }
+.notification-center__toolbar > div { display: flex; gap: 4px; }
+.notification-center__toolbar .one-ui-button { min-height: 40px; padding-inline: 10px; }
+.notification-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.notification-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--collector-hairline);
+  border-radius: 20px;
+  background: var(--collector-surface-soft);
+}
+.notification-item[data-unread="true"] { border-color: color-mix(in srgb, var(--ou-color-accent) 48%, var(--collector-hairline)); background: color-mix(in srgb, var(--ou-color-accent) 8%, var(--collector-surface-soft)); }
+.notification-item__content { min-width: 0; display: grid; gap: 6px; }
+.notification-item__content > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.notification-item__content strong { font-size: 14px; line-height: 1.35; }
+.notification-item__content time { color: var(--ou-color-text-muted); font-size: 12px; white-space: nowrap; }
+.notification-item__content p { margin: 0; color: var(--ou-color-text-muted); font-size: 13px; line-height: 1.45; }
+.notification-item__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+.notification-item__actions .one-ui-button { min-height: 38px; padding-inline: 9px; font-size: 12px; }
+
+@media (max-width: 899px), (orientation: portrait) and (max-width: 1100px) {
+  .notification-center__toolbar { align-items: flex-start; flex-direction: column; }
+  .notification-center__toolbar > div { width: 100%; }
+  .notification-center__toolbar .one-ui-button { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runtime-now-bar__live-dot { animation: none !important; }
+  .runtime-now-bar, .runtime-now-bar * { transition-duration: 0.01ms !important; transition-delay: 0s !important; }
+  .runtime-now-bar__details { transform: none !important; }
+}
+@media (forced-colors: active) {
+  .runtime-now-bar, .notification-item { border-color: CanvasText; background: Canvas; }
+  .runtime-now-bar__hand { border-color: CanvasText; }
+  .runtime-activity-mark { forced-color-adjust: none; }
+}
+
+
+/* 2026-09-12: keep the expanded Now Bar above contextual chrome without
+   sharing its row. The surface opens below the top chrome row. */
+.runtime-now-bar-anchor { z-index: 180; }
+.runtime-now-bar[data-overlay] { z-index: 181; }
+.runtime-now-bar[data-phase="open"] { isolation: isolate; }
+
+/* Expanded telemetry must clear both the utility row and contextual nav.
+   RuntimeActivityView measures the lower chrome edge; these z-index rules keep
+   the surface above the nav even while the shell morphs between states. */
+.runtime-now-bar-anchor[data-overlay-active="true"] { z-index: 130; }
+.runtime-now-bar[data-overlay] { z-index: 131; }
+
+/* 2026-09-12: Now Bar hit-target guard.
+   The compact/shared visual layers sit above the transparent summary button,
+   so they must never become pointer targets through shell-level overrides. */
+.app-shell.health-app-shell .runtime-now-bar__summary {
+  pointer-events: auto;
+}
+.app-shell.health-app-shell .runtime-now-bar__compact,
+.app-shell.health-app-shell .runtime-now-bar__compact *,
+.app-shell.health-app-shell .runtime-now-bar__shared,
+.app-shell.health-app-shell .runtime-now-bar__shared * {
+  pointer-events: none;
+}
+
+
+/* Keep compact/open Now Bar on one stable compositing layer. Hover only paints
+   its surface; it must never trigger a surrounding shell re-layout. */
+.runtime-now-bar-anchor,
+.runtime-now-bar {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}

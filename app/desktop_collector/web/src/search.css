@@ -1,0 +1,356 @@
+/* Search experience: One UI components only.
+   Figma source nodes:
+   - Enlarged Header 1549:8784
+   - Slide Navigation 744:4443
+   - Card 245:399
+   - Search 1497:12549
+   - Collapsed Search 1589:7654
+   - Selection Menu 1497:12842
+   The Galaxy Store reference defines composition and scroll behavior; component
+   geometry stays mapped to these Figma primitives. */
+
+.global-search-page {
+  --search-content-width: min(1180px, calc(100vw - 96px));
+}
+
+/* Search is a focused interaction page: keep only the Figma Top App Bar back affordance.
+   The enlarged title lives in scroll content so it naturally disappears like Galaxy Store. */
+.global-search-page .one-ui-interaction-page__bar {
+  position: relative;
+  z-index: 8;
+  background: var(--collector-canvas);
+  border-bottom: 0;
+}
+.global-search-page .one-ui-interaction-page__heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.global-search-page .one-ui-interaction-page__content {
+  width: var(--search-content-width);
+  max-width: none;
+  padding: 0 0 132px;
+}
+.global-search-page .one-ui-interaction-page__scroll {
+  scroll-padding-top: 86px;
+}
+
+.global-search {
+  min-width: 0;
+  display: grid;
+  gap: 28px;
+}
+
+/* Enlarged Header 1549:8784 adapted without the optional icon/info/button. */
+.global-search__hero {
+  min-height: 184px;
+  display: grid;
+  place-items: center;
+  padding: 34px 20px 22px;
+}
+.global-search__hero h2 {
+  margin: 0;
+  color: var(--ou-color-text);
+  font-size: clamp(40px, 4.4vw, 58px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.025em;
+}
+
+/* Slide Navigation 744:4443: two peers with a self-contained selected pill.
+   Sticky only after the enlarged title scrolls away. */
+.global-search__tabs-shell {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  padding: 8px 0 12px;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--collector-canvas) 96%, transparent) 0%,
+    color-mix(in srgb, var(--collector-canvas) 88%, transparent) 74%,
+    transparent 100%);
+}
+.global-search__tabs.one-ui-segmented-control {
+  width: min(560px, 100%);
+  min-height: 58px;
+  margin-inline: auto;
+  padding: 4px;
+  border: 0;
+  border-radius: 30px;
+  background: transparent;
+  box-shadow: none;
+}
+.global-search__tabs .one-ui-segmented-control__item {
+  min-height: 50px;
+  flex: 1 1 0;
+  border-radius: 25px;
+  color: var(--ou-color-text-muted);
+  font-size: 18px;
+  font-weight: 600;
+  transition: background 180ms var(--ou-ease-standard), color 180ms var(--ou-ease-standard), transform 120ms var(--ou-ease-basic-transform);
+}
+.global-search__tabs .one-ui-segmented-control__item[data-selected="true"] {
+  background: var(--collector-foreground);
+  color: var(--ou-color-text);
+}
+
+.global-search__browse,
+.global-search__results {
+  min-width: 0;
+  display: grid;
+  gap: 24px;
+}
+
+/* Card 245:399. Search cards remain large surfaces; avoid card-in-card styling. */
+.global-search__card.one-ui-card {
+  gap: 18px;
+  padding: 26px 30px 30px;
+  border-radius: 30px;
+  box-shadow: none;
+}
+.global-search__card .one-ui-card__copy :is(h1, h2, h3) {
+  font-size: 22px;
+}
+.global-search__card .one-ui-card__copy p {
+  max-width: 58ch;
+}
+.global-search__clear-all.one-ui-button {
+  min-height: 36px;
+  padding-inline: 12px;
+  color: var(--ou-color-accent-strong);
+  font-size: 14px;
+}
+
+.global-search__recent-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.global-search__recent-chip {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--collector-foreground);
+}
+.global-search__recent-term,
+.global-search__recent-remove {
+  border: 0;
+  background: transparent;
+  color: var(--ou-color-text);
+  cursor: pointer;
+}
+.global-search__recent-term {
+  min-height: 42px;
+  padding: 0 8px 0 16px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+.global-search__recent-remove {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ou-color-text) 10%, transparent);
+  color: var(--ou-color-text-muted);
+  font-size: 22px;
+  line-height: 1;
+}
+.global-search__recent-term:hover,
+.global-search__recent-remove:hover { background-color: color-mix(in srgb, var(--ou-color-text) 12%, transparent); }
+.global-search__recent-term:focus-visible,
+.global-search__recent-remove:focus-visible,
+.global-search__featured-item:focus-visible,
+.global-search__category-tile:focus-visible {
+  outline: 2px solid var(--ou-focus);
+  outline-offset: 2px;
+}
+
+/* Large-Chip / app-grid composition from the Figma kit, adapted to workspace destinations. */
+.global-search__featured-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+.global-search__featured-grid--actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.global-search__featured-item {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  padding: 14px 10px 12px;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  color: var(--ou-color-text);
+  text-align: center;
+  cursor: pointer;
+  transition: background 160ms var(--ou-ease-standard), transform 120ms var(--ou-ease-basic-transform);
+}
+.global-search__featured-item:hover { background: color-mix(in srgb, var(--ou-color-text) 6%, transparent); }
+.global-search__featured-item:active { transform: scale(.985); }
+.global-search__featured-icon {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: var(--collector-foreground);
+}
+.global-search__featured-icon img { width: 30px; height: 30px; object-fit: contain; }
+:root:not([data-theme="dark"]) .global-search__featured-icon img { filter: brightness(0); }
+.global-search__featured-item strong {
+  max-width: 100%;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.global-search__featured-item > span:last-child {
+  max-width: 100%;
+  color: var(--ou-color-text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.global-search__category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 16px;
+}
+.global-search__category-tile {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--ou-color-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+}
+.global-search__category-tile:hover { background: color-mix(in srgb, var(--ou-color-text) 6%, transparent); }
+.global-search__category-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--collector-foreground);
+}
+.global-search__category-icon img { width: 27px; height: 27px; object-fit: contain; }
+:root:not([data-theme="dark"]) .global-search__category-icon img { filter: brightness(0); }
+
+/* Selection Menu 1497:12842 for actual query results. */
+.global-search__results { width: min(920px, 100%); margin-inline: auto; }
+.global-search__summary {
+  margin: 0 8px;
+  color: var(--ou-color-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.global-search__list {
+  gap: 4px;
+  padding: 12px;
+  background: var(--collector-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.global-search__list .one-ui-selection-menu__item[data-rich="true"] {
+  min-height: 66px;
+  padding: 10px 14px;
+  border-radius: 19px;
+}
+.global-search__hint {
+  margin: 0 8px;
+  color: var(--ou-color-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Search 1497:12549 / Collapsed Search 1589:7654. This is the primary field,
+   intentionally floating at the bottom like the Galaxy Store reference. */
+.global-search__floating-search {
+  position: fixed;
+  z-index: 104;
+  left: 50%;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  width: min(560px, calc(100vw - 48px));
+  transform: translateX(-50%);
+  border-radius: 30px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .24);
+}
+.global-search__input { width: 100%; }
+.global-search__input .one-ui-search-field__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.global-search__input .one-ui-search-field__container {
+  height: 58px;
+  padding-inline: 20px;
+  border: 0;
+  border-radius: 30px;
+  background: var(--collector-foreground);
+  box-shadow: none;
+}
+.global-search__input .one-ui-search-field__icon { width: 28px; height: 28px; }
+.global-search__input .one-ui-search-field__icon img { width: 28px; height: 28px; }
+.global-search__input input {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ou-color-text);
+}
+.global-search__input input::placeholder { color: var(--ou-color-text-muted); opacity: .9; }
+.global-search__input input::-webkit-search-cancel-button { display: none; }
+.global-search__input .one-ui-search-field__container:focus-within {
+  outline: 2px solid color-mix(in srgb, var(--ou-color-accent-filled) 70%, transparent);
+  outline-offset: 2px;
+}
+:root:not([data-theme="dark"]) .global-search__input .one-ui-search-field__icon img { filter: brightness(0); }
+
+@media (max-width: 900px) {
+  .global-search-page { --search-content-width: min(100%, calc(100vw - 32px)); }
+  .global-search__featured-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .global-search__featured-grid--actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .global-search__category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 600px) {
+  .global-search-page .one-ui-interaction-page__content { padding-bottom: 112px; }
+  .global-search__hero { min-height: 160px; padding-top: 28px; }
+  .global-search__hero h2 { font-size: 42px; }
+  .global-search__tabs-shell { padding-inline: 8px; }
+  .global-search__tabs.one-ui-segmented-control { width: 100%; }
+  .global-search__card.one-ui-card { padding: 22px 20px 24px; border-radius: 28px; }
+  .global-search__featured-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 8px; }
+  .global-search__category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 8px; }
+  .global-search__floating-search { bottom: max(18px, env(safe-area-inset-bottom)); width: calc(100vw - 36px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .global-search__tabs .one-ui-segmented-control__item,
+  .global-search__featured-item { transition: none; }
+}

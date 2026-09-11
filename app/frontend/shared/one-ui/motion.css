@@ -1,0 +1,24 @@
+/* Shared motion values only; consumers opt in per component. */
+
+:root {
+  --ou-motion-instant: 100ms;
+  --ou-motion-fast: 140ms;
+  --ou-motion-standard: 240ms;
+  --ou-motion-deliberate: 360ms;
+  --ou-motion-spinner: 800ms;
+  --ou-ease-linear: linear;
+  --ou-ease-standard: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --ou-ease-basic-transform: cubic-bezier(0.22, 0.25, 0, 1);
+  --ou-ease-opacity-in: ease-out;
+  --ou-ease-opacity-out: ease-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ou-motion-instant: 0.01ms;
+    --ou-motion-fast: 0.01ms;
+    --ou-motion-standard: 0.01ms;
+    --ou-motion-deliberate: 0.01ms;
+    --ou-motion-spinner: 0.01ms;
+  }
+}
