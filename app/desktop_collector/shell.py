@@ -68,6 +68,12 @@ class LoopbackServer:
             access_log=False,
             log_level="warning",
             lifespan="on",
+            timeout_graceful_shutdown=2.0,
+            ws_max_size=8 * 1024 * 1024 + 1028,
+            ws_max_queue=1,
+            # Local raw camera pixels should not pay for WebSocket deflate after
+            # avoiding PNG encoding. Message size/queue/authentication stay bounded.
+            ws_per_message_deflate=False,
         )
         self._uvicorn = uvicorn.Server(config)
         self._thread = threading.Thread(
@@ -128,6 +134,8 @@ class LoopbackServer:
             self._shutdown_complete = True
 
         runtime = self.app.state.runtime
+        runtime.recognition_streams.shutdown()
+        runtime.recognition.shutdown()
         runtime.stop_acquisition()
         runtime.close_websockets_threadsafe()
         self._uvicorn.should_exit = True

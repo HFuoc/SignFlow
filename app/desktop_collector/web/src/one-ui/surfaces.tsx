@@ -48,17 +48,20 @@ export function OneUICard({
 
 export function OneUIEmptyState({
   title,
+  illustration,
   children,
   action,
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement> & {
   title: ReactNode;
+  illustration?: ReactNode;
   children: ReactNode;
   action?: ReactNode;
 }) {
   return (
     <div {...props} className={classes("one-ui-empty-state", className)}>
+      {illustration && <div className="one-ui-empty-state__illustration" aria-hidden="true">{illustration}</div>}
       <div className="one-ui-empty-state__copy">
         <h3>{title}</h3>
         <p>{children}</p>

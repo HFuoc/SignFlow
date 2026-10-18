@@ -1,0 +1,13 @@
+import { chromium } from '@playwright/test';
+import { pathToFileURL } from 'node:url';
+const browser = await chromium.launch({headless:true, executablePath:'/usr/bin/chromium', args:['--no-sandbox','--disable-dev-shm-usage','--allow-file-access-from-files']});
+const page = await browser.newPage({viewport:{width:1440,height:900}});
+const url = pathToFileURL('/mnt/data/DATN-work/.design-cache/demo-device.html').href;
+await page.goto(url,{waitUntil:'load',timeout:15000});
+await page.waitForTimeout(300);
+console.log('body', (await page.locator('body').innerText()).slice(0,300));
+await page.screenshot({path:'/mnt/data/DATN-work/.design-cache/demo-device-dark-1440x900.png'});
+await page.evaluate(()=>document.documentElement.dataset.theme='light');
+await page.waitForTimeout(150);
+await page.screenshot({path:'/mnt/data/DATN-work/.design-cache/demo-device-light-1440x900.png'});
+await browser.close();

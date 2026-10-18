@@ -11,24 +11,22 @@ import {
   ParticipantAccess,
 } from "./AuthScreens";
 import { DeviceManager, type DeviceSection } from "./DeviceManager";
-import { LiveMonitor, type LiveSection } from "./LiveMonitor";
+import { LiveMonitor, useMonitorView, type LiveSection } from "./LiveMonitor";
 import { UserManagement, type AccountSection } from "./UserManagement";
-import { Studio } from "./Studio";
+import { Studio, useStudioDraft } from "./Studio";
 import { studioSections, type StudioSection } from "./studioModel";
 import { GlobalSearch } from "./GlobalSearch";
 import type { SearchTarget } from "./search";
 import searchGlyphUrl from "./assets/one-ui/figma/search.svg";
-import studioHeroPreviewUrl from "./assets/studio-hero-device-preview.webp";
-import { NotificationCenter, NowBar, visibleActivitiesForRole } from "./RuntimeActivityView";
+import { NotificationCenter, LiveStatusNotification, type NowBarTelemetrySnapshot, visibleActivitiesForRole } from "./RuntimeActivityView";
+import { QuickStatus } from "./QuickStatus";
 import { createTelemetryMarker } from "./telemetryNowBar";
 import {
   OneUIShell,
-  OneUIButton,
   OneUIIconButton,
   OneUIInteractionPage,
   OneUISnackbar,
   OneUIStateMessage,
-  OneUIStatusIndicator,
   type ShellPage,
   type ShellNavigationTarget,
   type SnackbarNotice,
@@ -104,6 +102,10 @@ export function App({ bridge }: { bridge: BridgeClient }) {
   const [utilityOrigin, setUtilityOrigin] = useState<"quick" | "now">("quick");
   const [accountOpen, setAccountOpen] = useState(false);
   const [chartPaused, setChartPaused] = useState(false);
+  const studioDraft = useStudioDraft();
+  const monitorView = useMonitorView(state.series, chartPaused);
+  const resetStudioDraft = studioDraft.reset;
+  const resetMonitorView = monitorView.reset;
   const [activityState, dispatchActivity] = useReducer(runtimeActivityReducer, initialRuntimeActivityState);
   const [authEventMessage, setAuthEventMessage] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarNotice | null>(null);
@@ -120,7 +122,9 @@ export function App({ bridge }: { bridge: BridgeClient }) {
   const previousLostPacketsRef = useRef<Record<string, number>>({});
   const activityUserRef = useRef<string | null>(null);
 
-  const closeUtilitySurface = useCallback(() => setUtilitySurface(null), []);
+  const closeUtilitySurface = useCallback(() => {
+    setUtilitySurface(surface => surface === "notifications" && utilityOrigin === "quick" ? "quick" : null);
+  }, [utilityOrigin]);
   const recordActivity = useCallback((input: RuntimeActivityInput) => {
     dispatchActivity({ type: "upsert", input });
   }, []);
@@ -136,6 +140,9 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     const nextUser = status.user?.id ?? null;
     if (activityUserRef.current !== nextUser) {
       activityUserRef.current = nextUser;
+      resetStudioDraft();
+      resetMonitorView();
+      setChartPaused(false);
       previousLostPacketsRef.current = {};
       bridgeWasOpenRef.current = false;
       bridgeFailureActiveRef.current = false;
@@ -147,7 +154,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     setAccountOpen(false);
     setUtilitySurface(null);
     setSearchOpen(false);
-  }, []);
+  }, [resetStudioDraft, resetMonitorView]);
 
   const refreshAuth = useCallback(async () => {
     setAuth({ kind: "loading" });
@@ -165,6 +172,9 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     setUtilitySurface(null);
     setSearchOpen(false);
     setStudioSection("overview");
+    resetStudioDraft();
+    resetMonitorView();
+    setChartPaused(false);
     setNavigationTarget(null);
     dispatchActivity({ type: "reset" });
     setPage("devices");
@@ -174,7 +184,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     } catch {
       await refreshAuth();
     }
-  }, [acceptAuth, bridge, refreshAuth]);
+  }, [acceptAuth, bridge, refreshAuth, resetStudioDraft, resetMonitorView]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -354,6 +364,45 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     (total, statistics) => total + statistics.lost_packets,
     0,
   );
+  const [recentPacketLoss, setRecentPacketLoss] = useState(false);
+  const previousTotalLoss = useRef(totalLostPackets);
+  const lossTimer = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (totalLostPackets > previousTotalLoss.current) {
+      setRecentPacketLoss(true);
+      window.clearTimeout(lossTimer.current);
+      lossTimer.current = window.setTimeout(() => setRecentPacketLoss(false), 10_000);
+    } else if (totalLostPackets < previousTotalLoss.current) {
+      setRecentPacketLoss(false);
+      window.clearTimeout(lossTimer.current);
+    }
+    previousTotalLoss.current = totalLostPackets;
+  }, [totalLostPackets]);
+  useEffect(() => () => window.clearTimeout(lossTimer.current), []);
+  const telemetry: NowBarTelemetrySnapshot = {
+    recentPacketLoss,
+    bridgeStatus: state.bridgeStatus,
+    resyncPending: state.latestResync?.status === "pending",
+    connectedSources: connectedDevices,
+    totalSources: state.devices.length,
+    totalSampleRate,
+    totalReceivedPackets,
+    totalLostPackets,
+    chartPaused,
+    sources: state.devices.map((device) => ({
+      id: device.device_id,
+      name: device.display_name,
+      hand: device.hand,
+      handLabel: device.hand_label,
+      state: device.state,
+      simulated: device.simulated,
+      statisticsAvailable: !!state.statistics[device.device_id],
+      stateLabel: deviceStateLabel[device.state],
+      sampleRate: state.statistics[device.device_id]?.sample_rate_hz ?? 0,
+      receivedPackets: state.statistics[device.device_id]?.received_packets ?? 0,
+      lostPackets: state.statistics[device.device_id]?.lost_packets ?? 0,
+    })),
+  };
   const unreadCount = currentUser ? unreadActivityCount(activityState, currentUser.role) : 0;
   const nowActivities = useMemo<RuntimeActivityItem[]>(() => {
     if (!collectorAccess) return [];
@@ -416,10 +465,6 @@ export function App({ bridge }: { bridge: BridgeClient }) {
 
   const navigate = useCallback((nextPage: ShellPage) => {
     setPage(nextPage);
-    if (nextPage === "devices") setDeviceSection("overview");
-    if (nextPage === "live") setLiveSection("overview");
-    if (nextPage === "studio") setStudioSection("overview");
-    if (nextPage === "users") setAccountSection("overview");
     setUtilitySurface(null);
     setAccountOpen(false);
     setSearchOpen(false);
@@ -555,7 +600,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     return <ForcedPasswordChange bridge={bridge} dark={dark} onAuthenticated={acceptAuth} onLogout={() => void logout()} onToggleTheme={toggleTheme} user={currentUser} />;
   }
   if (currentUser.role === "participant") {
-    return <ParticipantAccess dark={dark} onLogout={() => void logout()} onToggleTheme={toggleTheme} user={currentUser} />;
+    return <ParticipantAccess bridge={bridge} onAuthenticated={acceptAuth} onProfileUpdated={user => setAuth({ kind: "ready", status: { setup_required: false, authenticated: true, user } })} dark={dark} onLogout={() => void logout()} onToggleTheme={toggleTheme} user={currentUser} />;
   }
 
   const initializationError = !state.ready && state.error;
@@ -565,11 +610,6 @@ export function App({ bridge }: { bridge: BridgeClient }) {
     <>
       <OneUIShell
         page={page}
-        hero={page === "studio" && studioSection === "overview" ? (
-          <figure className="studio-shell-hero-card" aria-label="SmartGlove live sensor workspace preview">
-            <img src={studioHeroPreviewUrl} alt="" />
-          </figure>
-        ) : undefined}
         dark={dark}
         bridgeOpen={state.bridgeStatus === "open"}
         connectedDevices={connectedDevices}
@@ -619,7 +659,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
         } : undefined}
         navigationTarget={navigationTarget}
         activity={(
-          <NowBar
+          <LiveStatusNotification
             activities={nowActivities}
             centerOpen={utilitySurface !== null || accountOpen || searchOpen}
             onExecute={executeActivityCommand}
@@ -635,29 +675,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
               notify({ message: `Event marked at ${time} · Local session only`, tone: "success" });
             }}
             page={page}
-            telemetry={{
-              bridgeStatus: state.bridgeStatus,
-              resyncPending: state.latestResync?.status === "pending",
-              connectedSources: connectedDevices,
-              totalSources: state.devices.length,
-              totalSampleRate,
-              totalReceivedPackets,
-              totalLostPackets,
-              chartPaused,
-              sources: state.devices.map((device) => ({
-                id: device.device_id,
-                name: device.display_name,
-                hand: device.hand,
-                handLabel: device.hand_label,
-                state: device.state,
-                simulated: device.simulated,
-                statisticsAvailable: !!state.statistics[device.device_id],
-                stateLabel: deviceStateLabel[device.state],
-                sampleRate: state.statistics[device.device_id]?.sample_rate_hz ?? 0,
-                receivedPackets: state.statistics[device.device_id]?.received_packets ?? 0,
-                lostPackets: state.statistics[device.device_id]?.lost_packets ?? 0,
-              })),
-            }}
+            telemetry={telemetry}
             triggerRef={nowBarButtonRef}
           />
         )}
@@ -682,14 +700,15 @@ export function App({ bridge }: { bridge: BridgeClient }) {
           />
         ) : null}
         {state.ready && page === "devices" ? <DeviceManager state={state} section={deviceSection} onActivity={recordActivity} onNotify={notify} /> : null}
-        {state.ready && page === "live" ? <LiveMonitor state={state} section={liveSection} dark={dark} paused={chartPaused} onPausedChange={setChartPaused} /> : null}
+        {state.ready && page === "live" ? <LiveMonitor view={monitorView} state={state} section={liveSection} dark={dark} paused={chartPaused} onPausedChange={setChartPaused} /> : null}
         {page === "studio" ? (
-          <Studio state={state} section={studioSection} onSectionChange={setStudioSection} />
+          <Studio bridge={bridge} draft={studioDraft} state={state} section={studioSection} onSectionChange={setStudioSection} />
         ) : null}
         {page === "users" && currentUser.role === "administrator" ? (
           <UserManagement
             bridge={bridge}
             currentUser={currentUser}
+            onOpenProfile={() => setAccountOpen(true)}
             section={accountSection}
             onSectionChange={setAccountSection}
             onActivity={recordActivity}
@@ -717,45 +736,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
         title={utilitySurface === "notifications" ? "Notifications" : "Quick Status"}
       >
         {utilitySurface === "quick" ? (
-          <div ref={quickStatusContentRef} className="quick-status-content" tabIndex={-1} aria-label="Quick status content">
-          <div className="quick-connection-line">
-            <OneUIStatusIndicator
-              emphasis="quiet"
-              label={state.bridgeStatus === "open" ? "Connected" : "Connecting"}
-              size="medium"
-              tone={state.bridgeStatus === "open" ? "positive" : "waiting"}
-            />
-            <span>{state.bridgeStatus === "open" ? "Authenticated · memory only" : "Session not ready"}</span>
-          </div>
-
-          <div className="quick-rate" role="group" aria-label={`Total sample rate ${totalSampleRate.toFixed(1)} Hz`}>
-            <span>Total sample rate</span>
-            <strong>{totalSampleRate.toFixed(1)}<small> Hz</small></strong>
-            <p>{connectedDevices}/{state.devices.length} sources are streaming live data</p>
-          </div>
-
-          <div className="quick-device-grid" role="group" aria-label="Two-glove status">
-            {state.devices.map((device) => (
-              <div key={device.device_id}>
-                <span className={`hand-mark compact ${device.hand}`} role="img" aria-label={`${device.hand_label} glove`}>{device.hand_label}</span>
-                <span><strong>{device.display_name}</strong><small>{deviceStateLabel[device.state]}</small></span>
-                <strong>{state.statistics[device.device_id]?.sample_rate_hz.toFixed(1) ?? "0.0"} Hz</strong>
-              </div>
-            ))}
-          </div>
-
-          <div className="quick-control-row">
-            <div>
-              <strong>Simulator</strong>
-              <span>Seed {state.simulation.seed} · {state.simulation.sample_rate_hz} Hz · packet loss {(state.simulation.packet_loss_rate * 100).toFixed(1)}%</span>
-            </div>
-          </div>
-          <div className="quick-notification-row">
-            <OneUIButton variant="secondary" onClick={() => openNotificationCenter("quick")}>
-              {unreadCount ? `Notifications · ${unreadCount} unread` : "Notifications"}
-            </OneUIButton>
-          </div>
-          </div>
+          <QuickStatus telemetry={telemetry} simulation={state.simulation} contentRef={quickStatusContentRef} unread={unreadCount} onNotifications={() => openNotificationCenter("quick")} />
         ) : utilitySurface === "notifications" ? (
           <NotificationCenter
             role={currentUser.role}
@@ -772,6 +753,7 @@ export function App({ bridge }: { bridge: BridgeClient }) {
       <AccountSheet
         bridge={bridge}
         onAuthenticated={acceptAuth}
+        onProfileUpdated={user => setAuth({ kind: "ready", status: { setup_required: false, authenticated: true, user } })}
         onDismiss={() => setAccountOpen(false)}
         onLogout={() => void logout()}
         open={accountOpen}

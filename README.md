@@ -2,7 +2,13 @@
 
 Ứng dụng desktop cho dự án găng tay nhận diện cử chỉ, dùng React, FastAPI và PyWebView. Hiện chạy hai găng **mô phỏng**, có tài khoản cục bộ và biểu đồ 13 kênh cảm biến. Không cần găng thật hoặc GPU để chạy thử.
 
-Studio có Overview, Dataset, MediaPipe, Train, Evaluate và Translate nhưng hiện chỉ là giao diện và cấu hình tạm trong bộ nhớ. Chưa có kết nối ESP32/Serial/BLE, ghi dataset, camera/MediaPipe, huấn luyện hoặc suy luận.
+Studio có Live Camera, tracking pose/hai tay, Capture và Auto với các model nhận diện thử nghiệm. Setup mặc định cài ViSign 25 từ và TCN 25 từ + OTHER trên CPU; hai model có bộ từ khác nhau. Chưa xác nhận độ chính xác trên webcam nhiều người. ESP32/Serial/BLE và thu dữ liệu găng thật chưa được triển khai.
+
+## Video chạy app thực tế
+
+[Xem video tracking và kết quả trong app](docs/demo/reference-tracking.webm).
+
+Video dùng clip tham chiếu **Chào** phát lại làm nguồn camera, giao diện React và worker nhận diện thật. Trong lần quay này ViSign kết luận **Tôi**, khác nhãn nguồn **Chào**: đây là demo pipeline và giới hạn hiện tại, không phải minh chứng nhận diện đúng. Không sửa score, ngưỡng hoặc kết quả để quay demo. [Nguồn và cách ghi](docs/demo/README.md).
 
 ## 1. Yêu cầu trên Windows
 
@@ -28,15 +34,11 @@ Mở lại PowerShell và kiểm tra `git --version`, `uv --version`, `node --ve
 ```powershell
 git clone https://github.com/HFuoc/SignFlow.git
 Set-Location SignFlow
-uv python install 3.12
-uv venv --python 3.12 .venv
-uv pip install --python .\.venv\Scripts\python.exe -e ".[test]"
-Push-Location app\desktop_collector\web
-npm.cmd ci
-Pop-Location
+.\setup.ps1
+.\run_app.ps1 -SkipBuild
 ```
 
-Chỉ tạo `.venv` nếu thư mục đó chưa tồn tại. Không cần activate môi trường; các lệnh dùng Python trực tiếp trong `.venv`. `npm.cmd ci` cài theo `package-lock.json`, không dùng thư mục `node_modules` chép từ máy khác.
+Setup giữ môi trường hiện có, cài dependency và build React. Cần Internet lần đầu; môi trường CPU nhận diện được cài riêng với phiên bản cố định. Dùng `setup.ps1 -WithTests` để thêm test dependencies, hoặc `-DesktopOnly` nếu chỉ cần simulator. VideoMAE GPU và các model KVSL bổ sung chưa được script này cài; không chọn chúng nếu chưa chuẩn bị runtime/artifact tương ứng.
 
 ## 3. Chạy app
 
@@ -61,7 +63,7 @@ Sau khi build thành công, mở nhanh bằng `.\run_app.ps1 -SkipBuild`. Sau kh
 2. Đăng nhập; quản trị viên có thể tạo tài khoản và phân quyền. Role `participant` không được vào collector.
 3. Mở **Devices**, kết nối nguồn mô phỏng trái/phải; chỉnh sample rate, noise và packet loss nếu cần.
 4. Mở **Monitor** để xem 13 kênh. Pause chỉ dừng hiển thị, acquisition vẫn tiếp tục. Có bật/tắt đường, đổi cửa sổ thời gian, zoom và trở lại live.
-5. Khám phá **Studio** và Search; các chức năng dataset/ML chưa triển khai không tạo kết quả nhận diện.
+5. Mở **Studio → Dataset → Live Camera**, chọn ViSign hoặc TCN, bật camera rồi dùng Capture hoặc Auto. Với TCN có thể bấm Recognize now khi kết thúc một dấu. Các ứng viên chưa xác nhận không phải từ được chấp nhận. Video TCN là dựng từ landmarks, không phải video người hướng dẫn.
 6. Đóng cửa sổ để dừng worker và local server.
 
 Tài khoản lưu ngoài repo tại `%LOCALAPPDATA%\SmartGlove Dataset Studio\smartglove.sqlite3`. Cập nhật source không xóa tài khoản; không upload database hoặc dữ liệu cá nhân. Xem [xác thực và phân quyền](docs/AUTH_PERSISTENCE.md).

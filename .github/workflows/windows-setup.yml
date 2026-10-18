@@ -1,0 +1,39 @@
+name: Windows setup and smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clean-install:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: astral-sh/setup-uv@v6
+      - name: Install from clean checkout
+        shell: pwsh
+        run: ./setup.ps1 -WithTests
+      - name: Verify CPU worker and both bundled models
+        shell: pwsh
+        run: |
+          ./.design-cache/kvsl-phase0a/extraction-env/Scripts/python.exe -c "from app.desktop_collector.recognition.worker import WorkerRuntime; r=WorkerRuntime(); r.close(); from pathlib import Path; from app.desktop_collector.recognition.visign_provider import load_model; from app.desktop_collector.recognition.experimental import CHECKPOINT; load_model(Path(CHECKPOINT)); from app.desktop_collector.recognition.gh_tcn_provider import load_model as load_tcn; from app.desktop_collector.recognition.gh_tcn import GH_TCN_MODEL; load_tcn(Path(GH_TCN_MODEL.checkpoint_path)); print('CPU models loaded')"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Desktop startup and shutdown
+        shell: pwsh
+        run: ./run_app.ps1 -SkipBuild -SmokeTest
+      - name: Backend tests
+        shell: pwsh
+        run: ./.venv/Scripts/python.exe -m pytest -q
+      - name: Frontend tests
+        working-directory: app/desktop_collector/web
+        shell: pwsh
+        run: npm.cmd test

@@ -59,18 +59,18 @@ def setup_admin(service: AuthService):  # type: ignore[no-untyped-def]
 def test_clean_migration_is_idempotent_and_persists_across_restart(tmp_path: Path) -> None:
     path = tmp_path / "restart" / "identity.sqlite3"
     first = IdentityRepository(path)
-    assert first.schema_versions() == (1,)
+    assert first.schema_versions() == (1, 2)
     assert first.foreign_keys_enabled()
     assert first.journal_mode() == "wal"
     service = AuthService(first)
     setup_admin(service)
     first.migrate()
-    assert first.schema_versions() == (1,)
+    assert first.schema_versions() == (1, 2)
     first.close()
 
     second = IdentityRepository(path)
     try:
-        assert second.schema_versions() == (1,)
+        assert second.schema_versions() == (1, 2)
         assert second.user_count() == 1
         assert second.find_user_by_username("ADMINISTRATOR") is not None
     finally:

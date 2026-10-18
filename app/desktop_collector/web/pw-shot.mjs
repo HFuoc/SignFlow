@@ -1,0 +1,12 @@
+import { chromium } from '@playwright/test';
+const url = 'http://127.0.0.1:44687/#api=http%3A%2F%2F127.0.0.1%3A44687&token=visual-demo-token';
+const browser = await chromium.launch({headless:true, executablePath:'/usr/bin/chromium', args:['--no-sandbox','--disable-dev-shm-usage']});
+const page = await browser.newPage({viewport:{width:1440,height:900}});
+page.on('console', m => console.log('console',m.type(),m.text()));
+page.on('pageerror', e => console.log('pageerror',e.message));
+await page.goto(url,{waitUntil:'domcontentloaded',timeout:15000});
+await page.waitForTimeout(1800);
+console.log('title',await page.title());
+console.log('text', (await page.locator('body').innerText()).slice(0,800));
+await page.screenshot({path:'/mnt/data/DATN-work/.design-cache/demo-auth.png',fullPage:true});
+await browser.close();

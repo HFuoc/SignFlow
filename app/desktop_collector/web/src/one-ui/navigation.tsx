@@ -3,6 +3,7 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useEffect,
+  useLayoutEffect,
   useRef,
 } from "react";
 
@@ -50,6 +51,24 @@ export function OneUITopNavigation({
   // contexts where glyph-only destinations are genuinely self-explanatory.
   const textOnly = !showIcons || items.every((item) => !item.icon);
   const navRef = useRef<HTMLElement>(null);
+  const selectionRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const selection = selectionRef.current;
+    if (!nav || !selection) return;
+    const measure = () => {
+      const active = nav.querySelector<HTMLElement>("[aria-current]");
+      if (!active) return;
+      selection.style.transform = `translate3d(${active.offsetLeft}px, ${active.offsetTop}px, 0)`;
+      selection.style.width = `${active.offsetWidth}px`;
+      selection.style.height = `${active.offsetHeight}px`;
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(nav);
+    nav.querySelectorAll("button").forEach(button => observer.observe(button));
+    return () => observer.disconnect();
+  }, [activeId, items.length]);
   const dragRef = useRef({ pointerId: -1, startX: 0, startScrollLeft: 0, dragging: false });
   const suppressClickRef = useRef(false);
 
@@ -119,7 +138,19 @@ export function OneUITopNavigation({
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
       onDragStart={(event) => event.preventDefault()}
+      onKeyDown={(event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button")];
+        const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        if (current < 0) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1
+          : (current + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[next]?.focus({ preventScroll: true });
+        buttons[next]?.click();
+      }}
     >
+      <span className="health-context-selection" ref={selectionRef} aria-hidden="true" />
       {items.map((item) => {
         const selected = item.id === activeId;
         return (
@@ -129,6 +160,13 @@ export function OneUITopNavigation({
             type="button"
             aria-current={selected ? "location" : undefined}
             aria-controls={item.controls}
+            onMouseDown={(event) => {
+              // Browser focus scrolling uses the sticky item's original flow
+              // position. Keep focus local without scrolling the workspace.
+              if (event.button !== 0) return;
+              event.preventDefault();
+              event.currentTarget.focus({ preventScroll: true });
+            }}
             onClick={(event) => {
               if (suppressClickRef.current) {
                 event.preventDefault();
@@ -174,6 +212,19 @@ export function OneUIAppDock<T extends string>({
     <nav
       {...props}
       className={classes("compact-app-navigation", "health-bottom-dock", className)}
+      onKeyDown={(event) => {
+        const rail = event.currentTarget.closest(".app-shell")?.getAttribute("data-navigation") === "rail";
+        const previous = rail ? "ArrowUp" : "ArrowLeft";
+        const next = rail ? "ArrowDown" : "ArrowRight";
+        if (![previous, next, "Home", "End"].includes(event.key)) return;
+        const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button")];
+        const index = buttons.indexOf(document.activeElement as HTMLButtonElement);
+        if (index < 0) return;
+        event.preventDefault();
+        const target = event.key === "Home" ? 0 : event.key === "End" ? buttons.length - 1
+          : (index + (event.key === next ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[target]?.focus({ preventScroll: true });
+      }}
       data-destinations={items.length}
       aria-label={ariaLabel}
     >

@@ -12,15 +12,17 @@ import {
 import { OneUIInteractionPage } from "./one-ui/interaction-page";
 import { buildSearchIndex, searchCategories, searchIndex, type SearchCategory, type SearchEntry, type SearchTarget } from "./search";
 import type { CollectorState } from "./store";
+import closeGlyphUrl from "./assets/one-ui/figma/close.svg";
 import searchGlyphUrl from "./assets/one-ui/figma/search.svg";
 import appsGlyphUrl from "./assets/one-ui/figma/apps-outline.svg";
-import deviceGlyphUrl from "./assets/one-ui/figma/device-outline.svg";
-import equalizerGlyphUrl from "./assets/one-ui/figma/equalizer.svg";
-import folderGlyphUrl from "./assets/one-ui/figma/folder-outline.svg";
-import labsGlyphUrl from "./assets/one-ui/figma/labs-outline.svg";
+import listGlyphUrl from "./assets/one-ui/figma/list.svg";
 import settingsGlyphUrl from "./assets/one-ui/figma/settings-outline.svg";
+import brightnessGlyphUrl from "./assets/one-ui/figma/brightness.svg";
+import infoGlyphUrl from "./assets/one-ui/figma/speed.svg";
 import contactGlyphUrl from "./assets/one-ui/figma/contact-outline.svg";
 import "./search.css";
+import { FigmaIconBadge } from "./one-ui/figma-icon";
+import { workspaceIcons } from "./one-ui/workspace-icons";
 
 export type { SearchTarget } from "./search";
 
@@ -31,13 +33,13 @@ const recentLimit = 8;
 
 const categoryIcons: Partial<Record<SearchCategory, string>> = {
   places: appsGlyphUrl,
-  devices: deviceGlyphUrl,
-  channels: equalizerGlyphUrl,
+  devices: workspaceIcons.devices,
+  channels: workspaceIcons.live,
   actions: settingsGlyphUrl,
-  datasets: folderGlyphUrl,
-  gestures: appsGlyphUrl,
-  runs: labsGlyphUrl,
-  models: labsGlyphUrl,
+  datasets: workspaceIcons.dataset,
+  gestures: listGlyphUrl,
+  runs: workspaceIcons.evaluate,
+  models: workspaceIcons.train,
 };
 
 function loadRecents(): string[] {
@@ -210,7 +212,7 @@ export function GlobalSearch({
         </div>
 
         {browsing ? (
-          <div className="global-search__browse">
+          <div className="global-search__browse" id={`${id}-results`}>
             {recents.length > 0 ? (
               <OneUICard
                 className="global-search__card global-search__recent-card"
@@ -221,7 +223,7 @@ export function GlobalSearch({
                   {recents.map((recent) => (
                     <span className="global-search__recent-chip" key={recent}>
                       <button type="button" className="global-search__recent-term" onClick={() => { setQuery(recent); inputRef.current?.focus({ preventScroll: true }); }}>{recent}</button>
-                      <button type="button" className="global-search__recent-remove" aria-label={`Remove ${recent} from recent searches`} onClick={() => removeRecent(recent)}>×</button>
+                      <button type="button" className="global-search__recent-remove" aria-label={`Remove ${recent} from recent searches`} onClick={() => removeRecent(recent)}><img src={closeGlyphUrl} alt="" /></button>
                     </span>
                   ))}
                 </div>
@@ -234,7 +236,7 @@ export function GlobalSearch({
                   {suggested.map((entry) => (
                     <button className="global-search__featured-item" key={entry.id} type="button" onClick={() => select(entry)}>
                       <span className="global-search__featured-icon" aria-hidden="true">
-                        <img src={entry.target.kind === "navigate" && entry.target.page === "devices" ? deviceGlyphUrl : entry.target.kind === "navigate" && entry.target.page === "live" ? equalizerGlyphUrl : entry.target.kind === "navigate" && entry.target.page === "studio" ? appsGlyphUrl : contactGlyphUrl} alt="" />
+                        <FigmaIconBadge src={entry.target.kind === "navigate" ? workspaceIcons[entry.target.page] : contactGlyphUrl} size="small" />
                       </span>
                       <strong>{entry.title}</strong>
                       <span>{entry.description}</span>
@@ -247,7 +249,7 @@ export function GlobalSearch({
                 <div className="global-search__featured-grid global-search__featured-grid--actions">
                   {matches.map((entry) => (
                     <button className="global-search__featured-item" key={entry.id} type="button" onClick={() => select(entry)}>
-                      <span className="global-search__featured-icon" aria-hidden="true"><img src={settingsGlyphUrl} alt="" /></span>
+                      <span className="global-search__featured-icon" aria-hidden="true"><FigmaIconBadge src={entry.target.kind === "action" ? {theme: brightnessGlyphUrl, "quick-status": infoGlyphUrl, account: contactGlyphUrl}[entry.target.action] : settingsGlyphUrl} size="small" /></span>
                       <strong>{entry.title}</strong>
                       <span>{entry.description}</span>
                     </button>
@@ -260,7 +262,7 @@ export function GlobalSearch({
               <div className="global-search__category-grid">
                 {categoryTiles.map((item) => (
                   <button className="global-search__category-tile" key={item.id} type="button" onClick={() => chooseCategory(item.id)}>
-                    <span className="global-search__category-icon" aria-hidden="true"><img src={categoryIcons[item.id] ?? appsGlyphUrl} alt="" /></span>
+                    <FigmaIconBadge src={categoryIcons[item.id] ?? appsGlyphUrl} />
                     <span>{item.label}</span>
                   </button>
                 ))}

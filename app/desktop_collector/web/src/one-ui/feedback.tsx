@@ -1,3 +1,8 @@
+import closeGlyph from "../assets/one-ui/figma/close.svg";
+import errorGlyph from "../assets/one-ui/figma/error-outline.svg";
+import infoGlyph from "../assets/one-ui/figma/info-outline.svg";
+import checkGlyph from "../assets/one-ui/figma/completed.svg";
+import { FigmaIcon } from "./figma-icon";
 import { useCallback, useEffect, useRef, useState, type HTMLAttributes, type ReactNode } from "react";
 
 import "./feedback.css";
@@ -52,7 +57,7 @@ export function OneUIStateMessage({
     >
       {pending
         ? <OneUIProgressIndicator label={typeof title === "string" ? title : "Working"} size="large" />
-        : <span className="one-ui-state-message__mark" aria-hidden="true" />}
+        : <img className="one-ui-state-message__mark one-ui-feedback-glyph" src={tone === "error" ? errorGlyph : infoGlyph} alt="" />}
       <div>
         <strong>{title}</strong>
         {description ? <p>{description}</p> : null}
@@ -149,7 +154,7 @@ export function OneUISnackbar({
           if (event.currentTarget === event.target && phase === "closing") finishDismiss();
         }}
       >
-        <span className="one-ui-snackbar__mark" aria-hidden="true" />
+        <FigmaIcon className="one-ui-snackbar__mark" src={isError ? errorGlyph : checkGlyph} />
         <span className="one-ui-snackbar__message">{notice.message}</span>
         {notice.actionLabel && notice.onAction ? (
           <button
@@ -169,9 +174,7 @@ export function OneUISnackbar({
           aria-label={notice.dismissLabel ?? "Dismiss notification"}
           onClick={requestDismiss}
         >
-          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-            <path d="m7 7 10 10M17 7 7 17" />
-          </svg>
+          <img className="one-ui-feedback-glyph" src={closeGlyph} alt="" />
         </button>
       </div>
     </div>

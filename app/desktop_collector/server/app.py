@@ -35,6 +35,10 @@ from app.desktop_collector.acquisition import (
     packet_channels,
 )
 from app.desktop_collector.domain import ConnectionState, DeviceStatistics, SensorPacket
+from app.desktop_collector.recognition.jobs import RecognitionJobService
+from app.desktop_collector.recognition.streaming import StreamingService
+from .recognition_routes import register_recognition
+from .recognition_stream import register_stream
 from app.desktop_collector.persistence import IdentityRepository, default_database_path
 from app.desktop_collector.sources import (
     SimulationConfig,
@@ -109,20 +113,37 @@ class ResetPasswordRequest(BaseModel):
     temporary_password: str = Field(min_length=1, max_length=1_024)
 
 
+class ProfileRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    display_name: str | None = Field(max_length=100)
+    full_name: str | None = Field(max_length=150)
+    contact_email: str | None = Field(max_length=254)
+    organization: str | None = Field(max_length=150)
+    avatar_data_url: str | None = Field(max_length=2_800_000)
+
+
 class WebSocketHub:
     """Track only active authenticated sockets; no telemetry queue is retained."""
 
     def __init__(self) -> None:
         self._clients: dict[WebSocket, str] = {}
+        self._on_close: dict[WebSocket, Any] = {}
 
-    def add(self, websocket: WebSocket, session_id: str) -> None:
+    def add(self, websocket: WebSocket, session_id: str, on_close=None) -> None:
         self._clients[websocket] = session_id
+        if on_close is not None:
+            self._on_close[websocket] = on_close
 
     def discard(self, websocket: WebSocket) -> None:
         self._clients.pop(websocket, None)
+        self._on_close.pop(websocket, None)
 
     async def close_all(self) -> None:
         clients = tuple(self._clients)
+        for client in clients:
+            callback = self._on_close.pop(client, None)
+            if callback:
+                callback()
         self._clients.clear()
         if clients:
             await asyncio.gather(
@@ -136,6 +157,9 @@ class WebSocketHub:
         )
         for client in selected:
             self._clients.pop(client, None)
+            callback = self._on_close.pop(client, None)
+            if callback:
+                callback()
         if selected:
             await asyncio.gather(
                 *(client.close(code=4401, reason="user session ended") for client in selected),
@@ -162,6 +186,8 @@ class AppRuntime:
         self.sources: list[SimulatedDataSource] = list(create_simulated_pair())
         for source in self.sources:
             self.controller.register_source(source)
+        self.recognition = RecognitionJobService()
+        self.recognition_streams = StreamingService(self.recognition.service.config)
         self.hub = WebSocketHub()
         self._loop: asyncio.AbstractEventLoop | None = None
         self._shutdown_lock = threading.Lock()
@@ -350,9 +376,12 @@ def create_app(
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         runtime.set_event_loop(asyncio.get_running_loop())
+        runtime.recognition.start()
         try:
             yield
         finally:
+            await asyncio.to_thread(runtime.recognition_streams.shutdown)
+            await asyncio.to_thread(runtime.recognition.shutdown)
             runtime.stop_acquisition()
             await runtime.hub.close_all()
             runtime.set_event_loop(None)
@@ -401,7 +430,7 @@ def create_app(
                 return JSONResponse({"detail": "preflight not allowed"}, status_code=403)
             response = Response(status_code=204)
             response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE"
             response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
             response.headers["Access-Control-Allow-Credentials"] = "true"
             response.headers["Vary"] = "Origin"
@@ -421,12 +450,13 @@ def create_app(
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=()"
         if path.startswith("/api/v1/"):
             response.headers["Cache-Control"] = "no-store"
         if not development:
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
-                "script-src 'self'; connect-src 'self' ws://127.0.0.1:*; "
+                "script-src 'self'; media-src 'self' blob:; connect-src 'self' ws://127.0.0.1:*; "
                 "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
             )
         if development and origin in allowed_origin_set:
@@ -466,6 +496,9 @@ def create_app(
                 runtime.auth.record_denied(principal, action=request.method, path=request.url.path)
                 raise
         return principal
+
+    register_recognition(app, runtime.recognition, session_principal)
+    register_stream(app, runtime, expected_host, allowed_origin_set, USER_SESSION_COOKIE)
 
     def set_user_cookie(response: JSONResponse, credential: str) -> None:
         response.set_cookie(
@@ -578,6 +611,12 @@ def create_app(
         )
         set_user_cookie(response, issued.credential)
         return response
+
+    @app.put("/api/v1/auth/profile")
+    async def update_own_profile(request: Request, payload: ProfileRequest) -> dict[str, Any]:
+        principal = await session_principal(request)
+        user = await asyncio.to_thread(runtime.auth.update_profile, principal, **payload.model_dump())
+        return {"user": public_user(user)}
 
     @app.get("/api/v1/admin/users")
     async def list_users(request: Request) -> dict[str, Any]:

@@ -3,6 +3,8 @@ import { FormEvent, type MouseEvent, useEffect, useRef, useState } from "react";
 import type { DeviceDescriptor } from "./api";
 import {
   OneUIButton,
+  OneUICard,
+  OneUIKeyValueList,
   OneUIDialog,
   OneUIStatusIndicator,
   OneUITextField,
@@ -11,6 +13,8 @@ import {
 import type { CollectorState } from "./store";
 import { collectorStore } from "./store";
 import { collectorAudiences, type RuntimeActivityInput } from "./runtimeActivity";
+
+import "./device-layout.css";
 
 const stateText = {
   disconnected: "Disconnected",
@@ -34,7 +38,7 @@ function currentFailureReason(): string {
 function flexSignals(state: CollectorState, device: DeviceDescriptor) {
   return state.channels.filter((channel) => channel.group === "flex").map((channel) => {
     const sample = state.series[device.device_id]?.values[channel.id]?.at(-1);
-    const value = device.state === "connected" && typeof sample === "number" && Number.isFinite(sample)
+    const value = state.bridgeStatus === "open" && device.state === "connected" && typeof sample === "number" && Number.isFinite(sample)
       ? sample : null;
     return { ...channel, value, height: value == null ? 0 : Math.max(0, Math.min(100, value / 4095 * 100)) };
   });
@@ -228,7 +232,7 @@ export function DeviceManager({
   const showSettings = section === "overview" || section === "simulator";
 
   return (
-    <section className="page device-page health-device-page" aria-labelledby="page-title" data-testid="device-manager">
+    <section id="device-section" className="page device-page health-device-page" aria-labelledby="page-title" data-testid="device-manager" data-section={section}>
       <header id="device-overview" className="page-toolbar health-section-head one-ui-page-heading">
         <div className="device-page-intro health-section-copy">
           <h1 id="page-title" tabIndex={-1}>{sectionCopy[section][0]}</h1>
@@ -260,7 +264,7 @@ export function DeviceManager({
       {showCards ? <div id="device-gloves" className="device-grid health-device-grid" data-subview={section}>
         {state.devices.map((device) => {
           const stats = state.statistics[device.device_id];
-          const connected = device.state === "connected";
+          const connected = state.bridgeStatus === "open" && device.state === "connected";
           const signals = flexSignals(state, device);
           return (
             <article
@@ -272,18 +276,15 @@ export function DeviceManager({
             >
               <div className="device-card-top health-device-card-top">
                 <div className="health-device-identity-wrap">
-                  <span className={`hand-mark ${device.hand}`} role="img" aria-label={`${device.hand_label} glove marker`}>
-                    {device.hand_label}
-                  </span>
                   <div className="device-identity">
                     <h2>{device.display_name}</h2>
-                    <code>{device.device_id}</code>
+                    <span className="device-source-label">{device.hand === "left" ? "Left glove" : "Right glove"} · <code>{device.device_id}</code></span>
                     <OneUIStatusIndicator
                       className="device-status"
                       emphasis="quiet"
-                      label={stateText[device.state]}
+                      label={state.bridgeStatus === "open" ? stateText[device.state] : "Bridge unavailable"}
                       size="medium"
-                      tone={stateTone[device.state]}
+                      tone={state.bridgeStatus === "open" ? stateTone[device.state] : "warning"}
                     />
                   </div>
                 </div>
@@ -297,13 +298,12 @@ export function DeviceManager({
                 <div className="health-signal-card">
                   <span>Flex signal</span>
                   <div className="health-flex-bars" role="img" aria-label={signals.map((signal) => `${signal.label}: ${signal.value == null ? "no data" : `${Math.round(signal.value)} ${signal.unit}`}`).join(", ")}>
-                    {signals.map((signal) => <i key={signal.id} data-missing={signal.value == null || undefined} style={{ height: `${signal.height}%` }} />)}
+                    {signals.map((signal) => <i key={signal.id} title={`${signal.label}: ${signal.value == null ? "No data" : Math.round(signal.value)}`} data-missing={signal.value == null || undefined} style={{ height: `${signal.height}%` }} />)}
                   </div>
                   {!connected && <small className="health-signal-note">No live data</small>}
                 </div>
                 <div className="health-sensor-card">
                   <span>{state.channels.length} sensor channels</span>
-                  <div className="health-sensor-ring">{state.channels.length}</div>
                   <small>Flex · IMU · FSR · distance</small>
                 </div>
               </div> : null}
@@ -338,10 +338,10 @@ export function DeviceManager({
         })}
       </div> : null}
 
-      {showSettings ? <form id="device-settings" className="settings-card health-settings-card one-ui-surface" onSubmit={submit} aria-labelledby="simulator-title">
+      {showSettings ? <div className="simulation-layout"><form id="device-settings" className="settings-card health-settings-card one-ui-surface" onSubmit={submit} aria-labelledby="simulator-title">
         <div className="settings-copy">
           <h2 id="simulator-title">Simulation settings</h2>
-          <p>Apply to both sources while keeping their data streams independent.</p>
+          <p>Change the simulated stream. Apply when your settings are ready.</p>
         </div>
         <div className="simulator-fields">
           <OneUITextField
@@ -383,7 +383,20 @@ export function DeviceManager({
         <OneUIButton className="simulator-apply" variant="primary" type="submit" loading={saving} loadingLabel="Applying settings" loadingText="Applying…">
           Apply
         </OneUIButton>
-      </form> : null}
+      </form>
+      {section === "simulator" ? <OneUICard className="simulation-summary" title="Applied configuration" description="Currently used by the simulator.">
+        <div className="simulation-summary__rate"><strong>{state.simulation.sample_rate_hz}</strong><span>Hz per source</span></div>
+        <OneUIKeyValueList rows={[
+          ["Seed", state.simulation.seed],
+          ["Noise σ", state.simulation.noise_std],
+          ["Packet loss", `${(state.simulation.packet_loss_rate * 100).toFixed(1)}%`],
+        ]} />
+        <div className="simulation-sources">{state.devices.map(device => <div key={device.device_id}>
+          <span>{device.display_name}<small>{device.hand === "left" ? "Left glove" : "Right glove"} · {state.bridgeStatus === "open" ? stateText[device.state] : "Bridge unavailable"}{device.simulated ? " · SIM" : ""}</small></span>
+        </div>)}</div>
+        <p className="simulation-summary__note">Left and right sources keep independent timestamps and packet sequences.</p>
+      </OneUICard> : null}
+      </div> : null}
 
       <OneUIDialog
         open={disconnectRequest != null}

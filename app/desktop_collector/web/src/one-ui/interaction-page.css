@@ -5,16 +5,14 @@
   inset: 0;
   z-index: 100;
   display: grid;
-  grid-template-rows: 76px minmax(0, 1fr);
   overflow: hidden;
   background: var(--collector-canvas);
   color: var(--ou-color-text);
   opacity: 1;
   transform: translate3d(100%, 0, 0);
-  transition: transform 320ms cubic-bezier(.2, .7, .2, 1);
   will-change: transform;
+  grid-template-rows: 64px minmax(0, 1fr);
 }
-.one-ui-interaction-page[data-entered="true"] { transform: translate3d(0, 0, 0); }
 
 .one-ui-interaction-page__bar {
   display: flex;
@@ -23,21 +21,21 @@
   min-width: 0;
   padding: 5px clamp(18px, 3.2vw, 42px);
   background: var(--collector-canvas);
-  border-bottom: 1px solid color-mix(in srgb, var(--ou-color-text) 7%, transparent);
+  border-bottom: 0;
 }
 .one-ui-interaction-page__back {
-  width: 50px;
-  height: 50px;
-  flex: 0 0 50px;
   display: grid;
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 25px;
   background: transparent;
   color: var(--ou-color-text);
   cursor: pointer;
   transition: background var(--ou-motion-fast) var(--ou-ease-standard), transform var(--ou-motion-fast) var(--ou-ease-basic-transform);
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 40px;
 }
 .one-ui-interaction-page__back-glyph {
   width: 24px;
@@ -65,8 +63,8 @@
 .one-ui-interaction-page__bar h1 {
   margin: 0;
   color: var(--ou-color-text);
-  font-size: 20px;
-  font-weight: 700;
+  font-size: var(--ou-type-subtitle);
+  font-weight: var(--ou-weight-strong);
   line-height: 1.25;
   letter-spacing: -.01em;
 }
@@ -74,7 +72,7 @@
   order: 2;
   margin: 0;
   color: var(--ou-color-text-muted);
-  font-size: 14px;
+  font-size: var(--ou-type-body);
   line-height: 1.25;
 }
 .one-ui-interaction-page__scroll {
@@ -94,61 +92,31 @@
 
 /* During a forward page transition, the current workspace yields left instead
    of being dimmed by a modal scrim. The full interaction page then owns input. */
-.app-shell[data-interaction-page] {
-  transform: translate3d(0, 0, 0);
-  transition: transform 320ms cubic-bezier(.2, .7, .2, 1);
-  will-change: transform;
-}
-.app-shell[data-interaction-phase="active"] {
-  transform: translate3d(-8vw, 0, 0);
-  pointer-events: none;
-}
-
-.one-ui-interaction-page .quick-status-content { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.one-ui-interaction-page .quick-connection-line,
-.one-ui-interaction-page .quick-notification-row { grid-column: 1 / -1; }
-.one-ui-interaction-page .quick-rate,
-.one-ui-interaction-page .quick-device-grid,
-.one-ui-interaction-page .quick-control-row { margin: 0; padding: 20px; border-radius: 28px; background: var(--collector-surface); }
-.one-ui-interaction-page .quick-control-row { grid-column: 1 / -1; }
 
 .one-ui-interaction-page .create-account-form {
   display: grid;
   gap: 20px;
-  padding: 28px 30px 30px;
   border-radius: 28px;
   background: var(--collector-surface);
+  padding: 20px;
 }
 .one-ui-interaction-page .create-account-form > .one-ui-button {
   justify-self: start;
   width: auto;
-  min-height: 48px;
-  padding-inline: 24px;
-  border-radius: 24px;
-  font-size: 16px;
 }
 .create-account-form .account-form-note { margin: 2px 0 0; }
-
-.account-interaction-page .account-sheet__content {
-  display: grid;
-  gap: 16px;
-  padding: 26px 28px;
-  border-radius: 28px;
-  background: var(--collector-surface);
-}
-.account-interaction-page .account-sheet__content > .one-ui-button {
-  min-height: 48px;
-  border-radius: 24px;
-}
 
 @media (max-width: 640px) {
   .one-ui-interaction-page { grid-template-rows: 70px minmax(0, 1fr); }
   .one-ui-interaction-page__bar { padding-inline: 12px; }
   .one-ui-interaction-page__content { padding: 22px 16px 32px; }
-  .one-ui-interaction-page .quick-status-content { grid-template-columns: minmax(0, 1fr); }
   .one-ui-interaction-page .create-account-form { padding: 22px 20px 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .one-ui-interaction-page,
   .app-shell[data-interaction-page] { transition: none; transform: none; }
+}
+.account-interaction-page .account-sheet__content {
+  display: grid;
+  gap: 16px;
 }

@@ -16,7 +16,7 @@ from typing import Any, Iterator, Mapping, Sequence
 
 
 DATABASE_FILENAME = "smartglove.sqlite3"
-CURRENT_SCHEMA_VERSION = 1
+CURRENT_SCHEMA_VERSION = 2
 ROLE_VALUES = ("participant", "researcher", "administrator", "developer")
 
 
@@ -47,6 +47,10 @@ class UserRecord:
     created_at: str
     updated_at: str
     last_login_at: str | None
+    full_name: str | None = None
+    contact_email: str | None = None
+    organization: str | None = None
+    avatar_data_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -166,6 +170,12 @@ MIGRATIONS: dict[int, tuple[str, ...]] = {
         """,
         "CREATE INDEX audit_events_occurred_at_idx ON audit_events(occurred_at DESC)",
     ),
+    2: (
+        "ALTER TABLE users ADD COLUMN full_name TEXT",
+        "ALTER TABLE users ADD COLUMN contact_email TEXT",
+        "ALTER TABLE users ADD COLUMN organization TEXT",
+        "ALTER TABLE users ADD COLUMN avatar_data_url TEXT",
+    ),
 }
 
 
@@ -188,10 +198,12 @@ class IdentityRepository:
             self._lock = threading.RLock()
             self._configure()
             self.migrate()
-        except (OSError, sqlite3.Error) as error:
+        except (OSError, sqlite3.Error, PersistenceStartupError) as error:
             connection = getattr(self, "_connection", None)
             if connection is not None:
                 connection.close()
+            if isinstance(error, PersistenceStartupError):
+                raise
             raise PersistenceStartupError("Local account storage could not be initialized.") from error
 
     def _configure(self) -> None:
@@ -217,6 +229,19 @@ class IdentityRepository:
         """Apply deterministic migrations exactly once inside an immediate transaction."""
 
         try:
+            # SQLite backup includes WAL data. Keep recovery outside the repository;
+            # never replace a previous checkpoint or copy a live database file.
+            with self._lock:
+                table = self._connection.execute(
+                    "SELECT name FROM sqlite_master WHERE name='schema_versions'"
+                ).fetchone()
+                versions = self.schema_versions() if table else ()
+                if versions == (1,):
+                    checkpoint = self.path.with_name(
+                        f"{self.path.stem}.pre-profile-v1-{uuid.uuid4().hex}.sqlite3"
+                    )
+                    with sqlite3.connect(checkpoint) as backup:
+                        self._connection.backup(backup)
             with self.transaction(immediate=True) as connection:
                 connection.execute(
                     "CREATE TABLE IF NOT EXISTS schema_versions "
@@ -288,6 +313,10 @@ class IdentityRepository:
             created_at=str(row["created_at"]),
             updated_at=str(row["updated_at"]),
             last_login_at=row["last_login_at"],
+            full_name=row["full_name"],
+            contact_email=row["contact_email"],
+            organization=row["organization"],
+            avatar_data_url=row["avatar_data_url"],
         )
 
     def user_count(self) -> int:
@@ -683,6 +712,25 @@ class IdentityRepository:
         if updated is None:
             raise PersistenceError("Updated user is unavailable.")
         return updated, revoked_ids
+
+    def update_own_profile(
+        self, user_id: str, *, display_name: str | None, full_name: str | None,
+        contact_email: str | None, organization: str | None,
+        avatar_data_url: str | None, now: str,
+    ) -> UserRecord:
+        with self.transaction(immediate=True) as connection:
+            result = connection.execute(
+                "UPDATE users SET display_name=?,full_name=?,contact_email=?,organization=?,"
+                "avatar_data_url=?,updated_at=? WHERE id=? AND is_active=1",
+                (display_name, full_name, contact_email, organization, avatar_data_url, now, user_id),
+            )
+            if result.rowcount != 1:
+                raise PersistenceConflict("User does not exist or is inactive.")
+            self._insert_audit(connection, event_type="profile_updated", actor_user_id=user_id,
+                               target_user_id=user_id, outcome="success", occurred_at=now)
+            updated = self._user(connection.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone())
+            assert updated is not None
+            return updated
 
     def replace_password(
         self,

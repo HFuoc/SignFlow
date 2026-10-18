@@ -1,6 +1,17 @@
-import { useState } from "react";
+import { FigmaIcon, FigmaIconBadge } from "./one-ui/figma-icon";
+import { workspaceIcons } from "./one-ui/workspace-icons";
+import uploadGlyph from "./assets/one-ui/figma/upload.svg";
+import cameraGlyph from "./assets/one-ui/figma/camera-outline.svg";
+import deviceGlyph from "./assets/one-ui/figma/devices.svg";
+import combinedGlyph from "./assets/one-ui/figma/apps.svg";
+import labsGlyph from "./assets/one-ui/figma/labs.svg";
+import reviewGlyph from "./assets/one-ui/figma/report.svg";
+import translateGlyph from "./assets/one-ui/figma/translate.svg";
+import { useCallback, useState } from "react";
 
-import type { DeviceDescriptor } from "./api";
+import { LiveCamera } from "./LiveCamera";
+import { Recognition } from "./Recognition";
+import type { BridgeClient, DeviceDescriptor } from "./api";
 import {
   OneUIButton,
   OneUICard,
@@ -57,7 +68,6 @@ function SourceReadiness({ state }: { state: CollectorState }) {
     <div className="studio-source-list">{state.devices.map((device) => {
       const status = sourceStatus(device, state.bridgeStatus === "open");
       return <div className="studio-source-row" key={device.device_id}>
-        <span className={`hand-mark compact ${device.hand}`} aria-hidden="true">{device.hand_label}</span>
         <div className="studio-source-copy"><h3>{device.display_name}</h3><p>{device.hand === "left" ? "Left hand" : "Right hand"} · {device.simulated ? "Simulated sensor source" : "Sensor source"}</p>
           <OneUIStatusIndicator {...status} emphasis="quiet" />
         </div>
@@ -69,18 +79,14 @@ function SourceReadiness({ state }: { state: CollectorState }) {
   </OneUICard>;
 }
 
-const workflow: Array<{ section: StudioSection; label: string; description: string; state: string }> = [
+const workflow: Array<{ section: "dataset" | "train" | "evaluate" | "translate"; label: string; description: string; state: string }> = [
   { section: "dataset", label: "Prepare your dataset", description: "Keep gesture labels and source provenance together.", state: "No dataset loaded" },
   { section: "train", label: "Configure a model", description: "Choose sensor, visual, or combined inputs.", state: "No training run" },
   { section: "evaluate", label: "Review the evidence", description: "Inspect held-out results before using a model.", state: "No evaluated model" },
   { section: "translate", label: "Explore live output", description: "Bring a ready model into a live gesture workspace.", state: "Not ready" },
 ];
 
-export function Studio({ section, onSectionChange, state }: {
-  section: StudioSection;
-  onSectionChange: (section: StudioSection) => void;
-  state: CollectorState;
-}) {
+export function useStudioDraft() {
   const [importOpen, setImportOpen] = useState(false);
   const [importSource, setImportSource] = useState<StudioInputSource>("sensor");
   const [datasetName, setDatasetName] = useState("");
@@ -90,6 +96,29 @@ export function Studio({ section, onSectionChange, state }: {
   const [overlayEnabled, setOverlayEnabled] = useState(true);
   const [training, setTraining] = useState<StudioTrainingDraft>(createTrainingDraft);
   const [translationSource, setTranslationSource] = useState<StudioInputSource>("sensor");
+  const reset = useCallback(() => {
+    setImportOpen(false);
+    setImportSource("sensor");
+    setDatasetName("");
+    setGestureLabels("");
+    setGestureLabel("");
+    setSessionNotes("");
+    setOverlayEnabled(true);
+    setTraining(createTrainingDraft());
+    setTranslationSource("sensor");
+  }, []);
+  return { importOpen, setImportOpen, importSource, setImportSource, datasetName, setDatasetName, gestureLabels, setGestureLabels, gestureLabel, setGestureLabel, sessionNotes, setSessionNotes, overlayEnabled, setOverlayEnabled, training, setTraining, translationSource, setTranslationSource, reset };
+}
+
+export function Studio({ bridge, section, onSectionChange, state, draft }: {
+  bridge: BridgeClient;
+  section: StudioSection;
+  onSectionChange: (section: StudioSection) => void;
+  state: CollectorState;
+  draft: ReturnType<typeof useStudioDraft>;
+}) {
+  const { importOpen, setImportOpen, importSource, setImportSource, datasetName, setDatasetName, gestureLabels, setGestureLabels, gestureLabel, setGestureLabel, sessionNotes, setSessionNotes, overlayEnabled, setOverlayEnabled, training, setTraining, translationSource, setTranslationSource } = draft;
+  const [recognitionMode, setRecognitionMode] = useState<"dataset" | "camera">("dataset");
   const current = studioSections.find((item) => item.id === section)!;
 
   function updateTraining<K extends keyof StudioTrainingDraft>(key: K, value: StudioTrainingDraft[K]) {
@@ -118,33 +147,37 @@ export function Studio({ section, onSectionChange, state }: {
     <section id="studio-section" className="page studio-page" aria-labelledby="page-title" data-testid="studio" data-section={section}>
       <header className="page-toolbar health-section-head one-ui-page-heading">
         <div className="health-section-copy"><h1 id="page-title" tabIndex={-1}>{section === "overview" ? "Studio" : current.label}</h1><p>{current.description}</p></div>
-        <OneUIStatusIndicator label={section === "overview" ? "Workspace preview" : "Configuration only"} tone="neutral" />
+        <OneUIStatusIndicator label={section === "overview" ? "Workspace preview" : section === "dataset" ? "Local video recognition" : "Configuration only"} tone="neutral" />
       </header>
 
       {section === "overview" && <>
         <div className="studio-layout">
-          <OneUICard title="From samples to gestures" description="A place to prepare each step of your development workflow.">
-            <ol className="studio-workflow">{workflow.map((step, index) => <li key={step.section}>
-              <span className="studio-step-number" aria-hidden="true">{index + 1}</span>
-              <div><h3>{step.label}</h3><p>{step.description}</p><span className="studio-note">{step.state}</span></div>
-              <OneUIButton variant="quiet" onClick={() => onSectionChange(step.section)} aria-label={`Open ${studioSections.find((item) => item.id === step.section)!.label}`}>Open</OneUIButton>
+          <section className="studio-workflow-section" aria-labelledby="studio-workflow-title">
+            <header><h2 id="studio-workflow-title">From samples to gestures</h2><p>Prepare each step of your development workflow.</p></header>
+            <ol className="studio-workflow">{workflow.map((step) => <li key={step.section}>
+              <OneUICard className={`studio-workflow-card studio-workflow-card--${step.section}`} headingLevel={3} title={step.label} description={step.description} eyebrow={<FigmaIconBadge src={workspaceIcons[step.section]} size="workflow" accent />}>
+                <OneUIStatusIndicator label={step.state} tone="neutral" />
+                <OneUIButton variant="quiet" onClick={() => onSectionChange(step.section)} aria-label={`Open ${studioSections.find((item) => item.id === step.section)!.label}`}>Open</OneUIButton>
+              </OneUICard>
             </li>)}</ol>
-          </OneUICard>
+          </section>
           <SourceReadiness state={state} />
         </div>
         <OneUICard title="One workspace, complementary inputs" className="studio-inputs-card">
           <div className="studio-inputs-grid">
-            <div><h3>Glove sensors</h3><p>Independent left and right streams, with device and simulation provenance.</p></div>
-            <div><h3>MediaPipe</h3><p>Visual hand tracking with its own source and collection metadata.</p><OneUIButton variant="quiet" onClick={() => onSectionChange("mediapipe")}>Prepare visual collection</OneUIButton></div>
-            <div><h3>Combined input</h3><p>Sensor and visual references stay separate until an alignment workflow is available.</p></div>
+            <div><img className="studio-source-icon" src={deviceGlyph} alt="" /><h3>Glove sensors</h3><p>Independent left and right streams, with device and simulation provenance.</p></div>
+            <div><img className="studio-source-icon" src={cameraGlyph} alt="" /><h3>MediaPipe</h3><p>Visual hand tracking with its own source and collection metadata.</p><OneUIButton variant="quiet" onClick={() => onSectionChange("mediapipe")}>Prepare visual collection</OneUIButton></div>
+            <div><img className="studio-source-icon" src={combinedGlyph} alt="" /><h3>Combined input</h3><p>Sensor and visual references stay separate until an alignment workflow is available.</p></div>
           </div>
         </OneUICard>
       </>}
 
-      {section === "dataset" && <div className="studio-layout">
+      {section === "dataset" && <div className={`studio-layout${recognitionMode === "camera" ? " studio-layout--camera" : ""}`}>
         <div className="studio-stack">
-          <OneUICard title="Your datasets" accessory={<OneUIButton variant="secondary" aria-expanded={importOpen} aria-controls="studio-import-draft" onClick={() => setImportOpen((open) => !open)}>{importOpen ? "Close import setup" : "Import dataset"}</OneUIButton>}>
-            <OneUIEmptyState title="Start with a labeled dataset">No datasets are loaded in Studio. Sensor samples, MediaPipe samples, and combined inputs will appear here with their original provenance.</OneUIEmptyState>
+          <OneUISegmentedControl ariaLabel="Recognition source" value={recognitionMode} onChange={setRecognitionMode} options={[{value: "dataset", label: "Dataset"}, {value: "camera", label: "Live Camera"}]} />
+          {recognitionMode === "dataset" ? <Recognition bridge={bridge} /> : <LiveCamera bridge={bridge} />}
+          <OneUICard title="Import workspace" accessory={<OneUIButton variant="secondary" icon={<FigmaIcon src={uploadGlyph} />} aria-expanded={importOpen} aria-controls="studio-import-draft" onClick={() => setImportOpen((open) => !open)}>{importOpen ? "Close import setup" : "Import dataset"}</OneUIButton>}>
+            <OneUIEmptyState illustration={<FigmaIcon src={workspaceIcons.dataset} />} title="Start with a labeled dataset">No custom dataset has been imported. Import setup remains a draft, separate from the read-only KVSL dataset above.</OneUIEmptyState>
             <div className="studio-dataset-details" aria-label="Dataset information">
               <OneUIKeyValueList rows={[["Gesture classes", "No labels loaded"], ["Samples", "No samples loaded"]]} />
               <OneUIKeyValueList rows={[["Created", "Not available"], ["Last modified", "Not available"]]} />
@@ -169,8 +202,8 @@ export function Studio({ section, onSectionChange, state }: {
       {section === "mediapipe" && <div className="studio-layout">
         <div className="studio-stack">
           <OneUICard title="Camera preview" accessory={<OneUIStatusIndicator label="Inactive" tone="neutral" />}>
-            <div className="studio-camera-preview"><OneUIEmptyState title="Camera is not initialized">No camera feed or hand tracking is active. Camera availability has not been checked.</OneUIEmptyState></div>
-            <div className="studio-hand-states"><span><span className="hand-mark tiny" aria-hidden="true">L</span>Left hand <strong>Not tracking</strong></span><span><span className="hand-mark tiny right" aria-hidden="true">R</span>Right hand <strong>Not tracking</strong></span></div>
+            <div className="studio-camera-preview"><OneUIEmptyState illustration={<FigmaIcon src={cameraGlyph} />} title="Camera is not initialized">No camera feed or hand tracking is active. Camera availability has not been checked.</OneUIEmptyState></div>
+            <div className="studio-hand-states"><span>Left hand <strong>Not tracking</strong></span><span>Right hand <strong>Not tracking</strong></span></div>
           </OneUICard>
           <OneUICard title="Preview setup" description="Preferences for a future camera session.">
             <div className="studio-form"><OneUISelectField label="Camera source" disabled><option value="">Camera selection unavailable</option></OneUISelectField>
@@ -215,7 +248,7 @@ export function Studio({ section, onSectionChange, state }: {
           </OneUICard>
         </div>
         <OneUICard title="Training job" accessory={<OneUIStatusIndicator label="Not started" tone="neutral" />}>
-          <OneUIEmptyState title="No training run">Progress and run details will appear when a training service is available and a job has actually started.</OneUIEmptyState>
+          <OneUIEmptyState illustration={<FigmaIcon src={labsGlyph} />} title="No training run">Progress and run details will appear when a training service is available and a job has actually started.</OneUIEmptyState>
           <OneUIKeyValueList rows={[["Dataset", "Required"], ["Input", inputSourceLabels[training.inputSource]], ["Model", training.modelType ? training.modelType.toUpperCase() : "Not selected"], ["Progress", "Not available"]]} />
           <OneUIButton variant="primary" disabled aria-describedby="studio-training-unavailable">Start training</OneUIButton><p id="studio-training-unavailable" className="studio-note">Training is not available in this version.</p>
         </OneUICard>
@@ -229,7 +262,7 @@ export function Studio({ section, onSectionChange, state }: {
         <div className="studio-layout">
           <OneUICard title="Evaluation summary" accessory={<OneUIStatusIndicator label="No results" tone="neutral" />}>
             <div className="studio-metric-placeholders"><div><span>Accuracy</span><strong>Not evaluated</strong></div><div><span>Precision / recall</span><strong>Not evaluated</strong></div></div>
-            <div className="studio-result-empty"><OneUIEmptyState title="Confusion matrix">Class comparisons will appear after a real evaluation. No matrix data is available.</OneUIEmptyState></div>
+            <div className="studio-result-empty"><OneUIEmptyState illustration={<FigmaIcon src={reviewGlyph} />} title="Confusion matrix">Class comparisons will appear after a real evaluation. No matrix data is available.</OneUIEmptyState></div>
           </OneUICard>
           <div className="studio-stack"><OneUICard title="Per-class results"><OneUIEmptyState title="No class results">Precision, recall, and sample support will be shown for evaluated gesture classes.</OneUIEmptyState></OneUICard><OneUICard title="Error analysis"><OneUIEmptyState title="No samples to inspect">Misclassified samples and their source references will become available with evaluation results.</OneUIEmptyState></OneUICard></div>
         </div>
@@ -239,7 +272,7 @@ export function Studio({ section, onSectionChange, state }: {
         <div className="studio-stack">
           <OneUICard title="Live gesture workspace" accessory={<OneUIStatusIndicator label="Inactive" tone="neutral" />}>
             <div className="studio-form"><SourceChoice value={translationSource} onChange={setTranslationSource} /><OneUISelectField label="Gesture model" disabled><option value="">No model available</option></OneUISelectField></div>
-            <OneUIEmptyState title="Waiting for a ready model">Live recognition is not available. No gesture is being detected.</OneUIEmptyState>
+            <OneUIEmptyState illustration={<FigmaIcon src={translateGlyph} />} title="Waiting for a ready model">Live recognition is not available. No gesture is being detected.</OneUIEmptyState>
             <OneUIKeyValueList rows={[["Detected gesture", "Not available"], ["Confidence", "Not available"], ["Alternate candidates", "No predictions"]]} />
             <div className="studio-actions"><OneUIButton variant="primary" disabled aria-describedby="studio-translate-unavailable">Start translation</OneUIButton><span id="studio-translate-unavailable" className="studio-note">A ready model and inference support are required.</span></div>
           </OneUICard>

@@ -1,0 +1,19 @@
+.one-ui-action-bar {
+  position:relative;
+  display:flex;
+  align-items:stretch;
+  width:340px;
+  max-width:100%;
+  min-height:44px;
+  padding:2px 8px;
+  border-radius:50px;
+  background:var(--ou-color-container-raised);
+  box-shadow:0 4px 14px #0000001a;
+  justify-self:end;
+}
+.one-ui-action-bar::after { position:absolute; left:50%; top:50%; width:1px; height:16px; transform:translateY(-50%); background:var(--ou-color-outline); content:""; pointer-events:none; }
+.one-ui-action-bar > .one-ui-button { flex:1 1 0; min-width:0; min-height:40px; background:transparent; font-size:var(--ou-type-label); font-weight:var(--ou-weight-emphasis); white-space:normal; }
+.one-ui-action-bar > .one-ui-button:disabled { background:transparent; }
+.one-ui-action-bar > .one-ui-button:hover:not(:disabled) { background:color-mix(in srgb, var(--ou-color-text) 6%, transparent); }
+.one-ui-action-bar > .one-ui-button[type="submit"] { color:var(--ou-color-accent-strong); }
+@media (forced-colors:active) { .one-ui-action-bar { border:1px solid ButtonText; } .one-ui-action-bar::after { background:ButtonText; } }

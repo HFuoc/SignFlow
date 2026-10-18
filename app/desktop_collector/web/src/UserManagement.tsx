@@ -1,3 +1,9 @@
+import searchGlyph from "./assets/one-ui/figma/search.svg";
+import { FigmaIcon } from "./one-ui/figma-icon";
+import { AccountProfile } from "./AccountProfile";
+import { RolePermissions } from "./RolePermissions";
+import securityGlyph from "./assets/one-ui/figma/security-outline.svg";
+import accountGlyph from "./assets/one-ui/figma/contact.svg";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 
 import type { AuditEvent, AuthUser, UserRole } from "./api";
@@ -14,6 +20,7 @@ import {
   OneUIStateMessage,
   OneUIStatusIndicator,
   OneUITextField,
+  OneUISearchField,
   type SnackbarNotice,
 } from "./one-ui";
 import type { RuntimeActivityInput } from "./runtimeActivity";
@@ -35,6 +42,7 @@ const auditLabels: Record<string, string> = {
   logout: "Sign out",
   user_created: "Create account",
   role_changed: "Change role",
+  profile_updated: "Update personal profile",
   account_activated: "Activate account",
   account_deactivated: "Deactivate account",
   password_changed: "Change password",
@@ -50,7 +58,9 @@ function confirmationDescription(confirmation: Confirmation | null): string {
     return `${account} will no longer be able to sign in and all active sessions will be revoked.`;
   }
   if (confirmation.kind === "role") {
-    return `${account} will receive the permissions of the ${roleLabels[confirmation.role]} role in future sessions.`;
+    return confirmation.role === confirmation.user.role
+      ? `Update the display name for ${account}. The role and active sessions stay the same.`
+      : `${account} will become ${roleLabels[confirmation.role]}. All current sessions will end immediately. The account must sign in again with the new permissions.`;
   }
   if (confirmation.kind === "reset") {
     return `${account} must use the new temporary password and replace it after the next sign-in.`;
@@ -63,6 +73,7 @@ export function UserManagement({
   currentUser,
   section,
   onSectionChange,
+  onOpenProfile,
   onActivity,
   onNotify,
 }: {
@@ -70,6 +81,7 @@ export function UserManagement({
   currentUser: AuthUser;
   section: AccountSection;
   onSectionChange: (section: AccountSection) => void;
+  onOpenProfile: () => void;
   onActivity: (activity: RuntimeActivityInput) => void;
   onNotify: (notice: Notice) => void;
 }) {
@@ -224,7 +236,7 @@ export function UserManagement({
       <header className="user-management__header">
         <div>
           <span className="section-eyebrow">{currentSection.eyebrow}</span>
-          <h2 id="user-management-title">{currentSection.title}</h2>
+          <h1 id="user-management-title" tabIndex={-1}>{currentSection.title}</h1>
           <p>{currentSection.description}</p>
         </div>
         {section === "accounts" ? (
@@ -236,21 +248,10 @@ export function UserManagement({
 
       {section === "overview" ? (
         <div className="account-overview-grid" aria-label="Account overview">
-          <OneUICard title="Signed-in account" description="Current local administrator for this workspace.">
-            <div className="account-overview-identity">
-              <div>
-                <strong>{currentUser.display_name || currentUser.username}</strong>
-                <span>@{currentUser.username}</span>
-              </div>
-              <OneUIStatusIndicator emphasis="quiet" label={currentUser.is_active ? "Active" : "Disabled"} tone={currentUser.is_active ? "positive" : "negative"} />
-            </div>
-            <OneUIKeyValueList rows={[
-              ["Role", roleLabels[currentUser.role]],
-              ["Password", currentUser.must_change_password ? "Change required" : "Up to date"],
-            ]} />
-          </OneUICard>
+          <AccountProfile user={currentUser} roleLabel={roleLabels[currentUser.role]}
+            action={<OneUIButton variant="secondary" onClick={onOpenProfile}>Profile & password</OneUIButton>} />
 
-          <OneUICard title="Local access" description="Accounts that can sign in on this device.">
+          <OneUICard title="Local access" description="Accounts that can sign in on this device." accessory={<img className="account-profile-icon" src={accountGlyph} alt="" />}>
             <div className="account-overview-metric"><strong>{users.length}</strong><span>accounts</span></div>
             <OneUIKeyValueList rows={[
               ["Active", `${accountSummary.active}`],
@@ -260,7 +261,7 @@ export function UserManagement({
             <OneUIButton variant="quiet" onClick={() => onSectionChange("accounts")}>Manage accounts</OneUIButton>
           </OneUICard>
 
-          <OneUICard title="Recent security" description="Latest authentication activity recorded locally.">
+          <OneUICard title="Recent security" description="Latest authentication activity recorded locally." accessory={<img className="account-profile-icon" src={securityGlyph} alt="" />}>
             {latestAuditEvent ? (
               <>
                 <div className="account-overview-security">
@@ -284,11 +285,10 @@ export function UserManagement({
       {section === "accounts" ? (
         <section className="user-management__accounts" aria-label="Account list and search">
           <div className="user-management__toolbar">
-            <OneUITextField
+            <OneUISearchField icon={<FigmaIcon src={searchGlyph} />}
               aria-label="Search accounts"
               label="Search accounts"
               placeholder="Username, display name, or role"
-              type="search"
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
             />
@@ -525,6 +525,7 @@ function CreateUserSheet({
         <OneUITextField label="Display name (optional)" autoComplete="off" value={displayName} onChange={(event) => setDisplayName(event.currentTarget.value)} />
         <PasswordField inputRef={passwordRef} autoComplete="new-password" error={errorField === "password" ? error ?? undefined : undefined} label="Temporary password" name="temporary-password" value={password} onChange={setPassword} />
         <OneUISelectField label="Role" value={role} onChange={(event) => setRole(event.currentTarget.value as UserRole)}>{allRoles.map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}</OneUISelectField>
+        <RolePermissions role={role} />
         {error && !errorField ? <p className="auth-form-error" role="alert">{error}</p> : null}
         <p className="account-form-note">New accounts must replace the temporary password at first sign-in.</p>
         <OneUIButton variant="primary" type="submit" loading={pending} loadingLabel="Creating account">Create account</OneUIButton>
@@ -557,6 +558,8 @@ function EditUserSheet({ user, onActivate, onConfirm, onDismiss, returnFocusRef 
       <div className="auth-form">
         <OneUITextField label="Display name" value={displayName} onChange={(event) => setDisplayName(event.currentTarget.value)} />
         <OneUISelectField label="Role" value={role} onChange={(event) => setRole(event.currentTarget.value as UserRole)}>{allRoles.map((value) => <option key={value} value={value}>{roleLabels[value]}</option>)}</OneUISelectField>
+        <RolePermissions role={role} />
+        {role !== activeUser.role && <p className="account-form-note" role="status">Changing the role ends all current sessions. At least one active Administrator must remain.</p>}
         <OneUIButton variant="primary" onClick={() => {
           if (role === activeUser.role && displayName.trim() === (activeUser.display_name ?? "")) { setError("There are no changes to save."); return; }
           onConfirm({ kind: "role", user: activeUser, role, displayName: displayName.trim() });

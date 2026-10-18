@@ -1,3 +1,7 @@
+import { AccountProfile } from "./AccountProfile";
+import { AccountProfileEditor } from "./AccountProfileEditor";
+import { RolePermissions } from "./RolePermissions";
+import { OneUIActionBar } from "./one-ui/action-bar";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 
 import brightnessGlyphUrl from "./assets/one-ui/figma/brightness.svg";
@@ -87,7 +91,6 @@ export function PasswordField({
   name,
   onChange,
   value,
-  variant = "pill",
 }: {
   autoComplete: string;
   error?: string;
@@ -96,7 +99,6 @@ export function PasswordField({
   name: string;
   onChange: (value: string) => void;
   value: string;
-  variant?: "pill" | "underline";
 }) {
   const [visible, setVisible] = useState(false);
   return (
@@ -105,20 +107,20 @@ export function PasswordField({
         ref={inputRef}
         autoComplete={autoComplete}
         invalid={!!error}
-        className={variant === "underline" ? "auth-underline-field" : undefined}
         label={label}
         message={error}
         name={name}
         type={visible ? "text" : "password"}
         value={value}
         onChange={(event) => onChange(event.currentTarget.value)}
-      />
-      <OneUIIconButton
-        className="auth-password-field__toggle"
-        icon={<PasswordVisibilityGlyph visible={visible} />}
-        label={visible ? `Hide ${label.toLocaleLowerCase("en")}` : `Show ${label.toLocaleLowerCase("en")}`}
-        aria-pressed={visible}
-        onClick={() => setVisible((current) => !current)}
+        endAction={
+          <OneUIIconButton
+            icon={<PasswordVisibilityGlyph visible={visible} />}
+            label={visible ? `Hide ${label.toLocaleLowerCase("en")}` : `Show ${label.toLocaleLowerCase("en")}`}
+            aria-pressed={visible}
+            onClick={() => setVisible((current) => !current)}
+          />
+        }
       />
     </div>
   );
@@ -280,7 +282,7 @@ export function LoginScreen({
       <form className="auth-form auth-form--login" onSubmit={submit} noValidate>
         <OneUITextField
           ref={usernameRef}
-          className="auth-underline-field"
+
           autoComplete="username"
           invalid={!!error}
           label="Username"
@@ -293,7 +295,6 @@ export function LoginScreen({
           label="Password"
           name="password"
           value={password}
-          variant="underline"
           onChange={setPassword}
         />
         <OneUICheckboxRow
@@ -371,12 +372,14 @@ export function ChangePasswordForm({
       <PasswordField inputRef={newRef} autoComplete="new-password" error={errorField === "new" ? error ?? undefined : undefined} label="New password" name="new-password" value={newPassword} onChange={setNewPassword} />
       <PasswordField inputRef={confirmationRef} autoComplete="new-password" error={errorField === "confirmation" ? error ?? undefined : undefined} label="Confirm new password" name="new-password-confirmation" value={confirmation} onChange={setConfirmation} />
       <FormError message={errorField ? null : error} />
-      <div className="auth-form__actions">
-        {onCancel ? <OneUIButton variant="quiet" onClick={onCancel}>Back</OneUIButton> : null}
-        <OneUIButton variant="primary" type="submit" loading={pending} loadingLabel="Changing password" loadingText="Updating…">
+      {onCancel ? <OneUIActionBar label="Password actions">
+        <OneUIButton variant="quiet" onClick={onCancel} disabled={pending}>Back</OneUIButton>
+        <OneUIButton variant="quiet" type="submit" loading={pending} loadingLabel="Changing password" loadingText="Updating…">
           Change password
         </OneUIButton>
-      </div>
+      </OneUIActionBar> : <div className="auth-form__actions">
+        <OneUIButton variant="primary" type="submit" loading={pending} loadingLabel="Changing password" loadingText="Updating…">Change password</OneUIButton>
+      </div>}
     </form>
   );
 }
@@ -408,16 +411,22 @@ export function ForcedPasswordChange({
 }
 
 export function ParticipantAccess({
+  bridge, onAuthenticated, onProfileUpdated,
   dark,
   onLogout,
   onToggleTheme,
   user,
 }: {
+  bridge: BridgeClient;
+  onAuthenticated: (status: AuthStatus) => void;
+  onProfileUpdated: (user: AuthUser) => void;
   dark: boolean;
   onLogout: () => void;
   onToggleTheme: () => void;
   user: AuthUser;
 }) {
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
   return (
     <AuthLayout dark={dark} eyebrow="Participant account" onToggleTheme={onToggleTheme} title="Limited access">
       <p className="auth-card__description">
@@ -436,13 +445,18 @@ export function ParticipantAccess({
         <div><dt>Role</dt><dd>{roleLabels[user.role]}</dd></div>
       </dl>
       <OneUIStatusIndicator label="Account access only" tone="neutral" size="medium" />
+      <OneUIButton ref={accountButtonRef} variant="secondary" onClick={() => setAccountOpen(true)}>Manage my profile</OneUIButton>
       <OneUIButton variant="primary" onClick={onLogout}>Sign out</OneUIButton>
+      <AccountSheet bridge={bridge} onAuthenticated={onAuthenticated} onProfileUpdated={onProfileUpdated}
+        onDismiss={() => setAccountOpen(false)} onLogout={onLogout} open={accountOpen}
+        returnFocusRef={accountButtonRef} user={user} />
     </AuthLayout>
   );
 }
 
 export function AccountSheet({
   bridge,
+  onProfileUpdated,
   onAuthenticated,
   onDismiss,
   onLogout,
@@ -451,6 +465,7 @@ export function AccountSheet({
   user,
 }: {
   bridge: BridgeClient;
+  onProfileUpdated: (user: AuthUser) => void;
   onAuthenticated: (status: AuthStatus) => void;
   onDismiss: () => void;
   onLogout: () => void;
@@ -459,19 +474,25 @@ export function AccountSheet({
   user: AuthUser;
 }) {
   const [changingPassword, setChangingPassword] = useState(false);
-  useEffect(() => { if (!open) setChangingPassword(false); }, [open]);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const editRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (!open) { setChangingPassword(false); setEditingProfile(false); setSaved(false); } }, [open]);
+  const finishEditing = () => { setEditingProfile(false); requestAnimationFrame(() => editRef.current?.focus()); };
   return (
     <OneUIInteractionPage
       className="account-interaction-page"
       eyebrow={changingPassword ? "Account" : "Local account"}
       id="account-panel"
-      onDismiss={changingPassword ? () => setChangingPassword(false) : onDismiss}
+      onDismiss={editingProfile ? finishEditing : changingPassword ? () => setChangingPassword(false) : onDismiss}
       open={open}
       presentation="account"
       returnFocusRef={returnFocusRef}
-      title={changingPassword ? "Change password" : "Account"}
+      title={editingProfile ? "Edit profile" : changingPassword ? "Change password" : "Account"}
     >
-      {changingPassword ? (
+      {editingProfile ? <AccountProfileEditor bridge={bridge} user={user} onCancel={finishEditing} onSaved={updated => {
+        onProfileUpdated(updated); setSaved(true); finishEditing();
+      }} /> : changingPassword ? (
         <ChangePasswordForm
           bridge={bridge}
           onCancel={() => setChangingPassword(false)}
@@ -482,14 +503,14 @@ export function AccountSheet({
         />
       ) : (
         <div className="account-sheet__content">
-          <dl className="account-summary">
-            <div><dt>Display name</dt><dd>{user.display_name || "Not set"}</dd></div>
-            <div><dt>Username</dt><dd>{user.username}</dd></div>
-            <div><dt>Role</dt><dd>{roleLabels[user.role]}</dd></div>
-            <div><dt>Status</dt><dd>{user.is_active ? "Active" : "Disabled"}</dd></div>
-          </dl>
-          <OneUIButton onClick={() => setChangingPassword(true)}>Change password</OneUIButton>
-          <OneUIButton variant="danger-quiet" onClick={onLogout}>Sign out</OneUIButton>
+          <AccountProfile user={user} roleLabel={roleLabels[user.role]} />
+          {saved && <p role="status">Profile saved.</p>}
+          <RolePermissions role={user.role} />
+          <div className="account-profile-actions">
+            <OneUIButton ref={editRef} variant="primary" onClick={() => { setSaved(false); setEditingProfile(true); }}>Edit profile</OneUIButton>
+            <OneUIButton variant="secondary" onClick={() => setChangingPassword(true)}>Change password</OneUIButton>
+            <OneUIButton variant="danger-quiet" onClick={onLogout}>Sign out</OneUIButton>
+          </div>
         </div>
       )}
     </OneUIInteractionPage>

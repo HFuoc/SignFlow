@@ -1,0 +1,10 @@
+.health-live-page[data-section="statistics"] { max-width:1200px; margin-inline:auto; }
+.source-statistics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; margin-top:20px; }
+.source-statistics__card .one-ui-card__copy { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:12px; }
+.source-statistics__card .one-ui-card__eyebrow { grid-row:1 / 3; margin:0; }
+.source-statistics__card .one-ui-card__copy p { grid-column:2; font-size:var(--ou-type-caption); overflow-wrap:anywhere; }
+.source-statistics__rate { display:flex; align-items:baseline; gap:8px; padding-block:4px 20px; border-bottom:1px solid var(--collector-hairline); }
+.source-statistics__rate strong { font-size:var(--ou-type-title); line-height:var(--ou-line-title); font-weight:var(--ou-weight-strong); font-variant-numeric:tabular-nums; }
+.source-statistics__rate span, .source-statistics__rate small { color:var(--ou-color-text-muted); }
+.source-statistics__rate small { margin-left:auto; font-size:var(--ou-type-caption); }
+@media (max-width:900px) { .source-statistics { grid-template-columns:1fr; } }

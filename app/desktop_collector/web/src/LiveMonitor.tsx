@@ -1,20 +1,15 @@
-import { useMemo, useState } from "react";
+import pauseGlyph from "./assets/one-ui/figma/pause.svg";
+import playGlyph from "./assets/one-ui/figma/control-play.svg";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ChannelDefinition } from "./api";
 import { OneUIButton, OneUICheckboxRow, OneUISegmentedControl } from "./one-ui";
+import { SourceStatistics } from "./SourceStatistics";
 import { SensorChart } from "./SensorChart";
 import type { CollectorState } from "./store";
 
 function PauseGlyph({ paused }: { paused: boolean }) {
-  return paused ? (
-    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-      <path d="m8 5 10 7-10 7Z" />
-    </svg>
-  ) : (
-    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-      <path d="M8 5v14M16 5v14" />
-    </svg>
-  );
+  return <img className="one-ui-figma-glyph" src={paused ? playGlyph : pauseGlyph} alt="" />;
 }
 
 const groups: Array<{ id: ChannelDefinition["group"]; label: string }> = [
@@ -32,33 +27,50 @@ function latestValue(state: CollectorState, deviceId: string, channelId: string)
 
 export type LiveSection = "overview" | "signals" | "statistics" | "packets" | "channels";
 
-export function LiveMonitor({
-  state,
-  dark,
-  paused,
-  onPausedChange,
-  section = "overview",
-}: {
-  state: CollectorState;
-  dark: boolean;
-  paused: boolean;
-  onPausedChange: (paused: boolean) => void;
-  section?: LiveSection;
-}) {
+export function useMonitorView(series: CollectorState["series"], paused: boolean) {
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(["flex_thumb_raw", "flex_index_raw", "fsr_raw"]),
   );
   const [windowSeconds, setWindowSeconds] = useState(10);
   const [followLive, setFollowLive] = useState(true);
 
-  const connectedDevices = state.devices.filter((device) => device.state === "connected").length;
+  const frozen = useRef(series);
+  if (!paused) frozen.current = series;
+  const ranges = useRef<Record<string, { min: number; max: number } | null>>({});
+  const reset = useCallback(() => {
+    setSelected(new Set(["flex_thumb_raw", "flex_index_raw", "fsr_raw"]));
+    setWindowSeconds(10);
+    setFollowLive(true);
+    ranges.current = {};
+  }, []);
+  return { selected, setSelected, windowSeconds, setWindowSeconds, followLive, setFollowLive, frozen, ranges, reset };
+}
+
+export function LiveMonitor({
+  state,
+  dark,
+  paused,
+  onPausedChange,
+  section = "overview",
+  view,
+}: {
+  state: CollectorState;
+  dark: boolean;
+  paused: boolean;
+  onPausedChange: (paused: boolean) => void;
+  section?: LiveSection;
+  view: ReturnType<typeof useMonitorView>;
+}) {
+  const { selected, setSelected, windowSeconds, setWindowSeconds, followLive, setFollowLive } = view;
+
+  const connectedDevices = state.bridgeStatus === "open" ? state.devices.filter((device) => device.state === "connected").length : 0;
   const totalPackets = Object.values(state.statistics).reduce(
     (total, stats) => total + stats.received_packets,
     0,
   );
   const totalSampleRate = useMemo(
-    () => Object.values(state.statistics).reduce((total, stats) => total + stats.sample_rate_hz, 0),
-    [state.statistics],
+    () => state.bridgeStatus === "open" ? state.devices.filter(device => device.state === "connected").reduce((total, device) => total + (state.statistics[device.device_id]?.sample_rate_hz ?? 0), 0) : 0,
+    [state.statistics, state.devices, state.bridgeStatus],
   );
 
   function toggleChannel(channelId: string) {
@@ -85,9 +97,11 @@ export function LiveMonitor({
 
   return (
     <section
+      id="live-section"
       className="page live-page health-live-page health-live-exact"
       aria-labelledby="page-title"
       data-testid="live-monitor"
+      data-section={section}
       data-total-packets={totalPackets}
       data-total-rate={totalSampleRate}
     >
@@ -133,7 +147,7 @@ export function LiveMonitor({
         </div>
         <div className="health-live-stat health-live-stat--blue">
           <span>Total sample rate</span>
-          <strong>{totalSampleRate.toFixed(1)} Hz</strong>
+          <strong>{connectedDevices ? `${totalSampleRate.toFixed(1)} Hz` : "—"}</strong>
         </div>
         <div className="health-live-stat health-live-stat--orange">
           <span>Packets received</span>
@@ -147,6 +161,8 @@ export function LiveMonitor({
         </div>
       </div> : null}
 
+      {section === "statistics" ? <SourceStatistics state={state} /> : null}
+
       {(showChannels || showCharts) ? <section className="health-live-workspace" data-subview={section}>
         {showChannels ? <aside id="live-channels" className="channel-panel health-live-channels" aria-label="Select displayed channels">
           <div className="health-live-channel-title">
@@ -157,7 +173,7 @@ export function LiveMonitor({
             <strong>{selected.size}<small>/13</small></strong>
           </div>
 
-          <div className="health-live-channel-scroll">
+          <div className="health-live-channel-scroll one-ui-checkbox-scroll">
             {groups.map((group) => (
               <fieldset key={group.id}>
                 <legend>{group.label}</legend>
@@ -181,7 +197,8 @@ export function LiveMonitor({
               key={device.device_id}
               device={device}
               channels={state.channels}
-              source={state.series[device.device_id]}
+              source={view.frozen.current[device.device_id]}
+                rangeCache={view.ranges}
               selected={selected}
               windowSeconds={windowSeconds}
               paused={paused}
@@ -206,7 +223,7 @@ export function LiveMonitor({
         </div>
         <div className="table-scroll">
           <table>
-            <thead><tr><th>Channel</th>{state.devices.map((device) => <th key={device.device_id}><span className={`hand-mark tiny ${device.hand}`}>{device.hand_label}</span>{device.display_name}</th>)}<th>Unit</th></tr></thead>
+            <thead><tr><th>Channel</th>{state.devices.map((device) => <th key={device.device_id}>{device.display_name}<small>{device.hand === "left" ? "Left glove" : "Right glove"}</small></th>)}<th>Unit</th></tr></thead>
             <tbody>
               {state.channels.map((channel) => (
                 <tr key={channel.id}>

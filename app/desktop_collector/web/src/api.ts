@@ -1,4 +1,12 @@
 export type ConnectionState = "disconnected" | "connecting" | "connected" | "error";
+export interface RecognitionReference {
+  reference_id: string;
+  label_id: string;
+  display_name: string;
+  available: boolean;
+  source_semantics_verified: false;
+  kind?: "landmark_replay";
+}
 export type Hand = "left" | "right";
 export type UserRole = "participant" | "researcher" | "administrator" | "developer";
 
@@ -12,7 +20,13 @@ export interface AuthUser {
   created_at: string;
   updated_at: string;
   last_login_at: string | null;
+  full_name: string | null;
+  contact_email: string | null;
+  organization: string | null;
+  avatar_data_url: string | null;
 }
+
+export type ProfileUpdate = Pick<AuthUser, "display_name" | "full_name" | "contact_email" | "organization" | "avatar_data_url">;
 
 export interface AuthStatus {
   setup_required: boolean;
@@ -161,6 +175,7 @@ export class BridgeClient {
   readonly apiOrigin: string;
   private token: string;
   private socket: WebSocket | null = null;
+  private recognitionSockets = new Set<WebSocket>();
   private authInvalidatedListeners = new Set<() => void>();
 
   constructor(credentials: LaunchCredentials) {
@@ -168,7 +183,7 @@ export class BridgeClient {
     this.token = credentials.token;
   }
 
-  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  private async response(path: string, init: RequestInit = {}): Promise<Response> {
     const response = await fetch(`${this.apiOrigin}${path}`, {
       ...init,
       credentials: "include",
@@ -203,6 +218,19 @@ export class BridgeClient {
         permission_denied: "You do not have permission to perform this action.",
         session_invalid: "The sign-in session is no longer valid.",
         invalid_request: "The request data is invalid.",
+        provider_unavailable: "The local recognition provider is unavailable.",
+        invalid_manifest: "The local KVSL manifest is unavailable or invalid.",
+        unsupported_provider: "Only the verified Đồ vật GCN provider is supported.",
+        unsupported_topic: "This sample topic is not supported.",
+        unknown_sample: "This sample is not in the supported manifest.",
+        missing_asset: "The local video is missing.",
+        asset_hash: "The local video does not match the manifest.",
+        unknown_job: "This session-local job is no longer available.",
+        job_active: "This sample already has an active recognition job.",
+        queue_full: "The recognition queue is full. Try again shortly.",
+        service_stopped: "Recognition is shutting down.",
+        unknown_reference: "This reference video is not in the local collection.",
+        reference_unavailable: "This reference video is unavailable. The local preview may be missing or damaged.",
       };
       const message = authMessages[code]
         ?? (response.status >= 500
@@ -215,8 +243,48 @@ export class BridgeClient {
       }
       throw new BridgeRequestError(message, code, response.status);
     }
+    return response;
+  }
+
+  private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const response = await this.response(path, init);
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
+  }
+
+  recognitionModels(signal?: AbortSignal): Promise<{ models: RecognitionModel[] }> {
+    return this.request("/api/v1/recognition/models", { signal });
+  }
+  recognitionReferences(signal?: AbortSignal, providerId = "visign-ridge-25"): Promise<{ references: RecognitionReference[] }> {
+    return this.request("/api/v1/recognition/references?provider_id=" + encodeURIComponent(providerId), { signal });
+  }
+  async recognitionReferenceMedia(id: string, signal?: AbortSignal): Promise<Blob> {
+    const response = await this.response("/api/v1/recognition/references/" + encodeURIComponent(id) + "/media", { signal, cache: "no-store" });
+    const blob = await response.blob();
+    if (blob.type !== "video/webm" || blob.size === 0 || blob.size > 4 * 1024 * 1024) {
+      throw new BridgeRequestError("This reference video could not be loaded.", "reference_unavailable", 422);
+    }
+    return blob;
+  }
+  recognitionSamples(signal?: AbortSignal): Promise<{ samples: RecognitionSample[] }> {
+    return this.request("/api/v1/recognition/samples", { signal });
+  }
+  recognitionJobs(signal?: AbortSignal): Promise<{ jobs: RecognitionJob[] }> {
+    return this.request("/api/v1/recognition/jobs", { signal });
+  }
+  submitRecognition(sample_id: string, provider_id: string): Promise<RecognitionJob> {
+    return this.request("/api/v1/recognition/jobs", { method: "POST", body: JSON.stringify({ sample_id, provider_id }) });
+  }
+  uploadLiveCapture(blob: Blob, topicId: string): Promise<RecognitionJob> {
+    return this.request("/api/v1/recognition/live-jobs?topic_id=" + encodeURIComponent(topicId), {
+      method: "POST", headers: { "Content-Type": "video/webm" }, body: blob,
+    });
+  }
+  recognitionJob(id: string, signal?: AbortSignal): Promise<RecognitionJob> {
+    return this.request("/api/v1/recognition/jobs/" + encodeURIComponent(id), { signal });
+  }
+  cancelRecognition(id: string): Promise<RecognitionJob> {
+    return this.request("/api/v1/recognition/jobs/" + encodeURIComponent(id), { method: "DELETE" });
   }
 
   authStatus(): Promise<AuthStatus> {
@@ -258,6 +326,10 @@ export class BridgeClient {
       method: "POST",
       body: JSON.stringify(input),
     });
+  }
+
+  updateProfile(input: ProfileUpdate): Promise<{ user: AuthUser }> {
+    return this.request("/api/v1/auth/profile", { method: "PUT", body: JSON.stringify(input) });
   }
 
   listUsers(): Promise<{ users: AuthUser[] }> {
@@ -323,6 +395,21 @@ export class BridgeClient {
     return this.request(`/api/v1/telemetry/snapshot?window_seconds=${windowSeconds}`);
   }
 
+  openRecognitionStream(providerId = "visign-ridge-25"): WebSocket {
+    const url = new URL("/api/v1/recognition/stream", this.apiOrigin);
+    url.protocol = "ws:";
+    const socket = new WebSocket(url);
+    this.recognitionSockets.add(socket);
+    socket.addEventListener("open", () => {
+      socket.send(JSON.stringify({ type: "authenticate", token: this.token, provider_id: providerId }));
+    });
+    socket.addEventListener("close", event => {
+      this.recognitionSockets.delete(socket);
+      if (event.code === 4401 || event.code === 4403) this.authInvalidatedListeners.forEach(listener => listener());
+    });
+    return socket;
+  }
+
   openTelemetry(
     onMessage: (message: BridgeMessage) => void,
     onStatus: (status: "connecting" | "open" | "closed" | "error") => void,
@@ -371,7 +458,41 @@ export class BridgeClient {
 
   dispose(): void {
     this.closeTelemetry();
+    this.recognitionSockets.forEach(socket => socket.close(1000, "collector closed"));
+    this.recognitionSockets.clear();
     this.authInvalidatedListeners.clear();
     this.token = "";
   }
+}
+
+export interface RecognitionModel {
+  provider_id: string; display_name: string; topic_id: string; class_count: number;
+  family?: string; experimental?: boolean; requires_topic?: boolean; supported_words?: string[];
+  score_kind?: "uncalibrated_softmax" | "uncalibrated_softmax_subset" | "raw_ridge";
+  modality: string; preprocessing_id: string; availability: "available" | "unavailable"; reason: string | null;
+}
+export interface RecognitionSample {
+  sample_id: string; recording_id: string; filename: string; topic_id: string;
+  label_id: string; display_label: string; asset_status: string;
+  provider_id: string; supported: boolean; reason: string | null;
+}
+export interface RecognitionPrediction {
+  schema_version: string; sample_id: string | null; recording_id: string | null; provider_id: string;
+  topic_id: string; status: string; preprocessing_id: string; model_sha256: string;
+  score_kind: "uncalibrated_softmax" | "uncalibrated_softmax_subset" | "raw_ridge"; latency_ms: Record<string, number>;
+  error_code?: string | null; rejection_reason?: string | null;
+  source_provenance: Record<string, unknown>;
+  quality?: { frames_decoded?: number; missing_group_frames?: Record<string, number>;
+    candidate_top_k?: RecognitionPrediction["top_k"]; native_winner_supported?: boolean;
+    native_top1_score?: number; accept_threshold?: number; other_score?: number;
+    hand_coverage?: number; hand_present_fraction?: number; boundary_reason?: string };
+  top_k: Array<{ source_class_index: number; label_id: string; display_name: string; score: number }>;
+}
+export interface RecognitionJob {
+  schema_version: "smartglove-recognition-job-v1"; job_id: string; sample_id: string | null; provider_id: string;
+  source_kind?: "manifest_sample" | "live_camera_capture"; capture_id?: string | null;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  created_at: string; started_at: string | null; finished_at: string | null;
+  prediction: RecognitionPrediction | null; error: { code: string; message: string } | null;
+  cancel_requested: boolean;
 }

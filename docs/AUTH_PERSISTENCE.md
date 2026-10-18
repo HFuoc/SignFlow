@@ -23,6 +23,44 @@ thay role/trạng thái/mật khẩu và audit tương ứng commit hoặc rollb
 
 ## Schema và migration
 
+### Profile extension — 2026-10-04 (schema 2)
+
+The user explicitly approved self-service display name/avatar, full name, contact email,
+and organization/team, while retaining the four existing roles. This bounded identity
+extension supersedes the earlier visual-only restriction; no collector/data schema changes.
+
+Version 2 adds nullable `full_name`, `contact_email`, `organization`, `avatar_data_url`
+columns to `users`. A v1 database is first backed up using SQLite's backup API to a unique
+`*.pre-profile-v1-<uuid>.sqlite3` file beside the live database (outside the repository).
+The existing immediate transaction applies the migration atomically. Credentials, roles,
+sessions and audit history survive. Startup fails closed if backup/migration fails; no
+database is deleted/recreated. To recover, stop the app cleanly and restore the verified
+v1 checkpoint with the matching older application version. Do not replace a running DB;
+retain the failed/new database for diagnosis and follow the WAL recovery guidance below.
+
+`PUT /api/v1/auth/profile` requires the bridge capability, exact Host/Origin and a valid
+user session after any mandatory password change. All four roles can update only their
+own profile. The complete body requires the five fields `display_name`, `full_name`,
+`contact_email`, `organization`, `avatar_data_url`; null clears a field. Unknown fields,
+including `id`, `role` and `is_active`, are rejected. Limits are 100/150/254/150 characters;
+trimmed contact email gets basic syntax validation, with no email verification, login,
+recovery or outbound mail. The response is `{user: AuthUser}` with the added nullable fields.
+Profile writes do not rotate cookies, revoke sessions or reconnect telemetry. Audit stores
+`profile_updated` actor/target/time only, never the personal values or image.
+
+Avatar input is a PNG/JPEG base64 data URL (no remote fetch, SVG or animation), up to 2 MiB,
+4096 px per side and 8,388,608 pixels. Pillow decodes it off the request thread, applies
+EXIF orientation, center-crops/resizes to 256x256 RGBA PNG and discards metadata. Only the
+normalized data URL is stored in SQLite. Null removes it and restores the existing Figma
+default avatar. The UI previews the draft; Cancel does not persist it. Pillow 12.x is the
+one new runtime dependency required for server-side decoding/normalization.
+
+RBAC is unchanged: Participant gets own-account tools only; Researcher and Developer get
+the collector; Administrator additionally manages users/roles/sessions and reads audit.
+Role permissions are now displayed in Account and create/edit-user forms. A changed role
+revokes existing sessions immediately (not just "future sessions"); the final active
+administrator protection still applies.
+
 `schema_versions(version, applied_at)` ghi migration đã áp dụng. Migration được chạy tuần tự,
 idempotent trong `BEGIN IMMEDIATE`; version lạ hoặc migration lỗi làm startup fail đóng với
 thông báo đã rút gọn.

@@ -1,3 +1,16 @@
+## 2026-09-28 - Shared circular glyph treatment
+
+Latest user correction rejects mixed 3D artwork. No hand/folder/test-tube/chart PNG from
+this refinement ships. Search and Studio reuse existing exact SVGs through FigmaIconBadge
+and workspace-icons.ts. Button Grid `1497:11799` supplies circle/label anatomy; desktop
+adaptations use 40/44/48px circles with 24px glyphs and existing light/dark tokens.
+
+Semantic sources: devices `341:63`; equalizer_2 `341:16`; folder_outline `340:8955`;
+labs_outline `340:8858`; report `340:8653`; translate `340:8511`; apps_outline `340:8389`;
+contact_outline `341:98`. Exact hashes and checked states are in docs/ASSET_INVENTORY.md.
+All these SVGs are reused byte-for-byte from the accepted desktop checkpoint. No paths,
+font binaries or protected catalog files changed. Older implementation notes follow.
+
 # One UI asset usage — Phase D.1
 
 This directory records visual provenance. Phase D.1 does not copy or extract any image bytes because the two required navigation icons and DM Sans font are already available from the confirmed, read-only production asset source.

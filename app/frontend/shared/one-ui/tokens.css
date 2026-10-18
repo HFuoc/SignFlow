@@ -1,25 +1,45 @@
 /*
  * SmartGlove shared One UI visual contract.
- * Primary visual source: approved local One UI 7 SVG references.
+ * Primary visual source: live One UI Figma wzEFGRLl9MU1nB1JxUSyhD, 2026-09-26.
  * This file contains custom properties only; it is not a reset or component library.
  */
 
 :root {
   color-scheme: light;
+  --ou-menu-surface: rgba(255,255,255,.5);
+  --ou-dialog-surface: rgba(252,252,255,.6);
+  --ou-overlay-blur: 24px;
+  --ou-dock-surface: rgba(255,255,255,.6);
+  --ou-dock-selected: rgba(255,255,255,.7);
+  --ou-nav-label: rgba(0,0,0,.6);
+  --ou-segment-surface: #fcfcff;
+  --ou-segment-selected: #eaeaea;
 
-  --ou-font-family: "DM Sans", "Segoe UI", sans-serif;
-  --ou-type-display-max: 56px;
-  --ou-type-title: 18px;
+  --ou-font-family: "Segoe UI", "DM Sans", sans-serif;
+  --ou-type-display-max: 36px;
+  --ou-type-title: 32px;
+  --ou-type-heading: 24px;
+  --ou-type-subtitle: 20px;
+  --ou-type-subheading: 16px;
   --ou-type-body: 14px;
-  --ou-type-label: 11px;
+  --ou-type-label: 14px;
+  --ou-type-caption: 12px;
+  --ou-type-micro: 11px;
+  --ou-weight-regular: 400;
+  --ou-weight-medium: 500;
+  --ou-weight-emphasis: 600;
+  --ou-weight-strong: 700;
+  --ou-line-title: 1.2;
+  --ou-line-heading: 1.35;
+  --ou-line-body: 1.5;
 
   --ou-color-canvas: #f1f1f3;
   --ou-color-container: #fcfcff;
   --ou-color-container-raised: #ffffff;
   --ou-color-tonal: #eaeaea;
   --ou-color-tonal-strong: #dedee5;
-  --ou-color-text: #17171a;
-  --ou-color-text-muted: #5d5d66;
+  --ou-color-text: #000000;
+  --ou-color-text-muted: #68686b;
   --ou-color-outline: #d5d5dc;
 
   /* Semantic surface and content roles consumed by the desktop integration. */
@@ -38,14 +58,14 @@
   --ou-content-on-inverse-muted: var(--oui-on-inverse-muted);
 
   --ou-color-accent: #387aff;
-  --ou-color-accent-strong: #185ee8;
+  --ou-color-accent-strong: #2563d8;
   --ou-color-accent-filled: #1556d8;
   --ou-color-on-accent: #ffffff;
   --ou-color-accent-tonal: #e4edff;
 
-  --oui-action-primary-bg: #387aff;
+  --oui-action-primary-bg: #2563d8;
   --oui-action-primary-fg: #ffffff;
-  --oui-action-primary-hover: #2f6ee8;
+  --oui-action-primary-hover: #1d56c3;
   --oui-action-on-inverse-bg: #fcfcff;
   --oui-action-on-inverse-fg: #17171a;
   --oui-action-on-inverse-hover: #e5e5ea;
@@ -57,6 +77,12 @@
   --ou-color-success: #087846;
   --ou-color-success-tonal: #dff8eb;
   --ou-color-warning: #a9430a;
+  --ou-color-warning-tonal: #fff0e5;
+  --ou-chart-axis: #5d5d66;
+  --ou-chart-grid: #dfdfe5;
+  --ou-chart-tick: #ceced5;
+  --ou-chrome-surface: rgba(234,234,236,.9);
+  --ou-color-hairline: rgba(23,23,26,.1);
   --ou-color-danger: #b3261e;
   --ou-color-danger-tonal: #ffebe9;
   --ou-color-left: #1758c7;
@@ -68,9 +94,13 @@
   --ou-status-negative-fg: var(--ou-color-danger);
   --ou-status-negative-bg: var(--ou-color-danger-tonal);
 
+  /* Desktop interaction/accessibility adaptations of the Modern component set. */
+  --ou-state-hover: rgba(0, 0, 0, .045);
+  --ou-state-pressed: rgba(0, 0, 0, .09);
+  --ou-layout-gap: 20px;
   --ou-focus: #1556d8;
   --ou-opacity-disabled: 0.52;
-  --ou-radius-control: 18px;
+  --ou-radius-control: 22px;
   --ou-radius-chip: 999px;
   --ou-radius-card: 28px;
   --ou-radius-shell: 32px;
@@ -83,9 +113,9 @@
   --ou-space-6: 24px;
   --ou-space-8: 32px;
   --ou-space-10: 40px;
-  --ou-control-height: 46px;
+  --ou-control-height: 40px;
   --ou-icon-optical-small: 18px;
-  --ou-icon-optical-standard: 20px;
+  --ou-icon-optical-standard: 24px;
   --ou-icon-optical-large: 24px;
   --ou-icon-stroke: 1.8;
 
@@ -95,29 +125,40 @@
   --ou-color-frosted: rgba(252, 252, 255, 0.88);
   --ou-color-frosted-fallback: #fcfcff;
   --ou-frosted-blur: 20px;
+  --ou-color-text-on-raised: #68686b;
+  --ou-desktop-field-height: 44px;
+  --ou-desktop-icon-size: 22px;
+  --ou-field-line: #848487;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
+  --ou-menu-surface: rgba(0,0,0,.5);
+  --ou-dialog-surface: rgba(23,23,26,.6);
+  --ou-dock-surface: rgba(46,46,48,.6);
+  --ou-dock-selected: rgba(61,61,61,.7);
+  --ou-nav-label: rgba(255,255,255,.6);
+  --ou-segment-surface: #5f5f61;
+  --ou-segment-selected: #2e2e30;
 
   --ou-color-canvas: #010102;
   --ou-color-container: #17171a;
   --ou-color-container-raised: #2e2e30;
   --ou-color-tonal: #2e2e30;
   --ou-color-tonal-strong: #5f5f61;
-  --ou-color-text: #fcfcff;
-  --ou-color-text-muted: #a9a9b0;
+  --ou-color-text: #ffffff;
+  --ou-color-text-muted: #848487;
   --ou-color-outline: #3e3e43;
 
-  --ou-color-accent: #78a3ff;
-  --ou-color-accent-strong: #a9c3ff;
+  --ou-color-accent: #387aff;
+  --ou-color-accent-strong: #5c92ff;
   --ou-color-accent-filled: #387aff;
   --ou-color-on-accent: #ffffff;
   --ou-color-accent-tonal: #203a6d;
 
-  --oui-action-primary-bg: #387aff;
+  --oui-action-primary-bg: #2563d8;
   --oui-action-primary-fg: #ffffff;
-  --oui-action-primary-hover: #2f6ee8;
+  --oui-action-primary-hover: #1d56c3;
   --oui-action-on-inverse-bg: #f7f7fa;
   --oui-action-on-inverse-fg: #17171a;
   --oui-action-on-inverse-hover: #dedee4;
@@ -128,22 +169,36 @@
   --ou-color-success: #65dfa5;
   --ou-color-success-tonal: #173f2d;
   --ou-color-warning: #ff9b65;
+  --ou-color-warning-tonal: #4b2a1b;
+  --ou-chart-axis: #b9b9c2;
+  --ou-chart-grid: #343439;
+  --ou-chart-tick: #49494f;
+  --ou-chrome-surface: rgba(46,46,48,.88);
+  --ou-color-hairline: rgba(255,255,255,.1);
   --ou-color-danger: #ff8d8b;
   --ou-color-danger-tonal: #51292b;
   --ou-color-left: #82aaff;
   --ou-color-right: #ff9a66;
 
+  --ou-state-hover: rgba(255, 255, 255, .07);
+  --ou-state-pressed: rgba(255, 255, 255, .12);
   --ou-focus: #b4cbff;
   --ou-shadow-float: 0 7px 16px rgba(0, 0, 0, 0.25), 0 22px 54px rgba(0, 0, 0, 0.22);
   --ou-shadow-card: none;
   --ou-shadow-related-overlay: 0 14px 38px rgba(0, 0, 0, 0.3);
   --ou-color-frosted: rgba(23, 23, 26, 0.72);
   --ou-color-frosted-fallback: #17171a;
+  --ou-color-text-on-raised: #959598;
+  --ou-field-line: #848487;
 }
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
     --ou-color-frosted: var(--ou-color-frosted-fallback);
     --ou-frosted-blur: 0px;
+    --ou-overlay-blur: 0px;
+    --ou-menu-surface: var(--ou-color-container);
+    --ou-dialog-surface: var(--ou-color-container);
+    --ou-chrome-surface: var(--ou-color-container-raised);
   }
 }

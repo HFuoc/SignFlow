@@ -32,10 +32,8 @@ export { DialogActionRow, OneUIDialog, OneUISideSheet } from "./overlays";
 export { OneUIInteractionPage } from "./interaction-page";
 export {
   CompactAppNavigation,
-  LandscapeAppRail,
   OneUIShell,
   OneUITopAppBar,
-  landscapeRailQuery,
   type ShellPage,
   type ShellContextNavigation,
   type ShellNavigationTarget,

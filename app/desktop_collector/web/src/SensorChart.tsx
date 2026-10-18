@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
 import uPlot, { type AlignedData, type Options, type Series } from "uplot";
 
 import type { ChannelDefinition, DeviceDescriptor } from "./api";
@@ -6,7 +6,7 @@ import { OneUIStateMessage, OneUIStatusIndicator } from "./one-ui";
 import type { DeviceSeries } from "./store";
 
 // A channel keeps its color when neighboring channels are toggled. Both hands
-// share the channel mapping; L/R labels and solid/dashed traces identify hands.
+// share the channel mapping; full hand labels and solid/dashed traces identify hands.
 const channelColors = {
   dark: ["#8DB4FF", "#FFB479", "#78D7B5", "#C7AAFF", "#F397C6", "#E7D37C", "#74D7E7", "#B6D98A", "#EFA79E", "#B8C9FF", "#DBA8DD", "#92D3C9", "#D0C3AD"],
   light: ["#2559B8", "#99501D", "#176D4E", "#7243AC", "#A13E78", "#75600C", "#096C80", "#486F1D", "#A24136", "#4A50A9", "#884888", "#176B62", "#736047"],
@@ -22,6 +22,7 @@ interface SensorChartProps {
   dark: boolean;
   followLive: boolean;
   onExplore: () => void;
+  rangeCache: RefObject<Record<string, { min: number; max: number } | null>>;
 }
 
 export function SensorChart({
@@ -34,10 +35,14 @@ export function SensorChart({
   dark,
   followLive,
   onExplore,
+  rangeCache,
 }: SensorChartProps) {
   const host = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
-  const previousXRange = useRef<{ min: number; max: number } | null>(null);
+  const previousXRange = useMemo(() => ({
+    get current() { return rangeCache.current[device.device_id] ?? null; },
+    set current(value: { min: number; max: number } | null) { rangeCache.current[device.device_id] = value; },
+  }), [device.device_id, rangeCache]);
   const frozen = useRef<DeviceSeries | undefined>(source);
   if (!paused) frozen.current = source;
   const shown = frozen.current;
@@ -74,6 +79,9 @@ export function SensorChart({
       })),
     ];
 
+    const theme = getComputedStyle(hostElement);
+    const token = (name: string) => theme.getPropertyValue(name).trim();
+    const axisFont = `${token("--ou-type-micro")} ${token("--ou-font-family")}`;
     const options: Options = {
       width: Math.max(1, hostElement.clientWidth),
       height: Math.max(1, hostElement.clientHeight),
@@ -86,21 +94,21 @@ export function SensorChart({
       scales: { x: { time: true }, y: { auto: true } },
       axes: [
         {
-          stroke: dark ? "#B9B9C2" : "#5D5D66",
-          font: '11px "Segoe UI", sans-serif',
+          stroke: token("--ou-chart-axis"),
+          font: axisFont,
           size: 46,
           gap: 8,
           space: 64,
           grid: { show: false },
-          ticks: { stroke: dark ? "#49494F" : "#CECED5", size: 4 },
+          ticks: { stroke: token("--ou-chart-tick"), size: 4 },
         },
         {
-          stroke: dark ? "#B9B9C2" : "#5D5D66",
-          font: '11px "Segoe UI", sans-serif',
+          stroke: token("--ou-chart-axis"),
+          font: axisFont,
           size: 56,
           gap: 8,
           space: 42,
-          grid: { stroke: dark ? "#343439" : "#DFDFE5", width: 1 },
+          grid: { stroke: token("--ou-chart-grid"), width: 1 },
           ticks: { show: false },
         },
       ],
@@ -159,10 +167,9 @@ export function SensorChart({
     <article id={`chart-${device.hand}`} className="chart-card health-live-chart-card one-ui-surface" data-hand={device.hand}>
       <header className="health-live-chart-head">
         <div className="health-live-chart-identity">
-          <span className={`hand-mark compact ${device.hand}`}>{device.hand_label}</span>
           <div>
             <h3>{device.display_name}</h3>
-            <p>{device.hand === "left" ? "Solid line" : "Dashed line"} · raw sensors</p>
+            <p>{device.hand === "left" ? "Left glove · Solid line" : "Right glove · Dashed line"} · raw sensors</p>
           </div>
         </div>
         <OneUIStatusIndicator
@@ -187,7 +194,7 @@ export function SensorChart({
           />
           </div>
           <p className="health-chart-axis-caption">Time · raw values, units per channel</p>
-          <ul className="health-chart-legend" aria-label={`Visible channels ${device.hand_label}`}>
+          <ul className="health-chart-legend" aria-label={`Visible channels · ${device.hand === "left" ? "Left glove" : "Right glove"}`}>
             {activeChannels.map((channel) => {
               const value = shown?.values[channel.id]?.at(-1);
               return (

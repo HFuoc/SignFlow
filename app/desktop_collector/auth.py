@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
+import io
 import re
 import secrets
 from dataclasses import dataclass
@@ -12,6 +15,7 @@ from typing import Any, Callable, Mapping
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 from argon2.low_level import Type
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.desktop_collector.persistence import (
     ROLE_VALUES,
@@ -91,6 +95,10 @@ def public_user(user: UserRecord) -> dict[str, Any]:
         "created_at": user.created_at,
         "updated_at": user.updated_at,
         "last_login_at": user.last_login_at,
+        "full_name": user.full_name,
+        "contact_email": user.contact_email,
+        "organization": user.organization,
+        "avatar_data_url": user.avatar_data_url,
     }
 
 
@@ -371,6 +379,62 @@ class AuthService:
                 else "Không tìm thấy tài khoản."
             )
             raise AuthenticationError("protected_or_missing_user", message, status_code=409) from error
+
+    def update_profile(
+        self, principal: SessionPrincipal, *, display_name: str | None,
+        full_name: str | None, contact_email: str | None, organization: str | None,
+        avatar_data_url: str | None,
+    ) -> UserRecord:
+        def text(value: str | None, limit: int) -> str | None:
+            value = (value or "").strip()
+            if len(value) > limit or any(ord(char) < 32 for char in value):
+                raise AuthenticationError("invalid_profile", "Thông tin hồ sơ không hợp lệ.")
+            return value or None
+
+        display = text(display_name, 100)
+        full_name = text(full_name, 150)
+        organization = text(organization, 150)
+        email = text(contact_email, 254)
+        if email and not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email):
+            raise AuthenticationError("invalid_contact_email", "Email liên hệ không hợp lệ.")
+        avatar = self.normalize_avatar(avatar_data_url)
+        try:
+            return self.repository.update_own_profile(
+                principal.user.id, display_name=display, full_name=full_name,
+                contact_email=email, organization=organization, avatar_data_url=avatar,
+                now=_utc_text(self.now()),
+            )
+        except PersistenceConflict as error:
+            raise SessionInvalid() from error
+
+    @staticmethod
+    def normalize_avatar(value: str | None) -> str | None:
+        if value is None:
+            return None
+        # No remote URLs, SVG, animation or raw originals are retained. Bound both
+        # compressed size and pixel count before decoding, then strip all metadata.
+        invalid = AuthenticationError("invalid_avatar", "Chọn ảnh PNG hoặc JPEG tĩnh, tối đa 2 MB và 4096 × 4096 px.")
+        if len(value) > 2_800_000:
+            raise invalid
+        match = re.fullmatch(r"data:image/(png|jpeg);base64,([A-Za-z0-9+/=]+)", value)
+        if not match:
+            raise invalid
+        try:
+            raw = base64.b64decode(match[2], validate=True)
+            if len(raw) > 2 * 1024 * 1024:
+                raise invalid
+            with Image.open(io.BytesIO(raw), formats=["PNG", "JPEG"]) as image:
+                if (image.width < 1 or image.height < 1 or image.width > 4096 or image.height > 4096
+                        or image.width * image.height > 8_388_608 or getattr(image, "n_frames", 1) != 1):
+                    raise invalid
+                normalized = ImageOps.fit(ImageOps.exif_transpose(image).convert("RGBA"), (256, 256))
+                clean = Image.new("RGBA", normalized.size)
+                clean.paste(normalized)
+                output = io.BytesIO()
+                clean.save(output, format="PNG")
+            return "data:image/png;base64," + base64.b64encode(output.getvalue()).decode("ascii")
+        except (ValueError, OSError, binascii.Error, UnidentifiedImageError, Image.DecompressionBombError) as error:
+            raise invalid from error
 
     def reset_password(
         self,

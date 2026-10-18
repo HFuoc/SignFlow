@@ -1,3 +1,9 @@
+import arrowDownGlyph from "../assets/one-ui/figma/chevron-down.svg";
+import completedGlyph from "../assets/one-ui/figma/completed.svg";
+import { FigmaIcon } from "./figma-icon";
+import errorGlyph from "../assets/one-ui/figma/error-outline.svg";
+import uncheckedGlyph from "../assets/one-ui/figma/checkbox-unselected.svg";
+import checkGlyph from "../assets/one-ui/figma/checkbox-selected.svg";
 import {
   forwardRef,
   type ButtonHTMLAttributes,
@@ -8,6 +14,7 @@ import {
   Children,
   isValidElement,
   useEffect,
+  useLayoutEffect,
   useId,
   useMemo,
   useRef,
@@ -80,10 +87,45 @@ type IconButtonProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">
 
 export const OneUIIconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   function OneUIIconButton({ className, disabled, icon, label, loading = false, type = "button", ...props }, ref) {
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
+    const tooltipRef = useRef<HTMLSpanElement | null>(null);
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [tip, setTip] = useState(false);
+    const hideTip = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+      setTip(false);
+    };
+    const showTip = () => {
+      hideTip();
+      if (!disabled && !loading && !props["aria-expanded"]) timer.current = setTimeout(() => setTip(true), 500);
+    };
+    useEffect(() => {
+      const dismiss = () => hideTip();
+      document.addEventListener("pointerdown", dismiss, true);
+      document.addEventListener("keydown", dismiss, true);
+      document.addEventListener("scroll", dismiss, true);
+      window.addEventListener("resize", dismiss);
+      return () => {
+        if (timer.current) clearTimeout(timer.current);
+        document.removeEventListener("pointerdown", dismiss, true);
+        document.removeEventListener("keydown", dismiss, true);
+        document.removeEventListener("scroll", dismiss, true);
+        window.removeEventListener("resize", dismiss);
+      };
+    }, []);
+    useLayoutEffect(() => {
+      const tooltip = tooltipRef.current, button = buttonRef.current;
+      if (!tip || !tooltip || !button) return;
+      const anchor = button.getBoundingClientRect(), bounds = tooltip.getBoundingClientRect();
+      tooltip.style.left = `${Math.max(8, Math.min(innerWidth - bounds.width - 8, anchor.left + (anchor.width - bounds.width) / 2))}px`;
+      tooltip.style.top = `${Math.max(8, anchor.bottom + bounds.height + 8 < innerHeight ? anchor.bottom + 8 : anchor.top - bounds.height - 8)}px`;
+    }, [tip, label]);
     return (
+      <>
       <button
         {...props}
-        ref={ref}
+        ref={(node) => { buttonRef.current = node; if (typeof ref === "function") ref(node); else if (ref) ref.current = node; }}
         className={classes("one-ui-icon-button", className)}
         aria-label={label}
         aria-busy={loading || undefined}
@@ -91,11 +133,17 @@ export const OneUIIconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         data-tooltip={label}
         disabled={disabled || loading}
         type={type}
+        onPointerEnter={(event) => { props.onPointerEnter?.(event); showTip(); }}
+        onPointerLeave={(event) => { props.onPointerLeave?.(event); hideTip(); }}
+        onFocus={(event) => { props.onFocus?.(event); if (event.currentTarget.matches(":focus-visible")) showTip(); }}
+        onBlur={(event) => { props.onBlur?.(event); hideTip(); }}
       >
         {loading
           ? <OneUIProgressIndicator label={label} size="small" />
           : <span className="one-ui-icon-button__glyph" aria-hidden="true">{icon}</span>}
       </button>
+      {tip && !props["aria-expanded"] && createPortal(<span ref={tooltipRef} className="one-ui-tooltip" aria-hidden="true">{label}</span>, document.body)}
+      </>
     );
   },
 );
@@ -176,13 +224,14 @@ export function OneUIStatusIndicator({
       data-size={size}
       data-tone={tone}
     >
-      <span className="one-ui-status-indicator__mark" aria-hidden="true" />
+      {tone === "positive" || tone === "negative" || tone === "warning" ? <FigmaIcon className="one-ui-status-indicator__mark" src={tone === "positive" ? completedGlyph : errorGlyph} /> : null}
       <span>{label}</span>
     </span>
   );
 }
 
 type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "children"> & {
+  endAction?: ReactNode;
   invalid?: boolean;
   label: string;
   message?: string;
@@ -192,6 +241,7 @@ type TextFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, "children"> & 
 export const OneUITextField = forwardRef<HTMLInputElement, TextFieldProps>(
   function OneUITextField({
     className,
+    endAction,
     disabled,
     invalid = false,
     label,
@@ -216,6 +266,7 @@ export const OneUITextField = forwardRef<HTMLInputElement, TextFieldProps>(
             aria-describedby={props["aria-describedby"] ?? messageId}
           />
           {suffix ? <span className="one-ui-text-field__suffix" aria-hidden="true">{suffix}</span> : null}
+          {endAction ? <span className="one-ui-text-field__end-action">{endAction}</span> : null}
         </span>
         {message ? <span id={messageId} className="one-ui-text-field__message" role={invalid ? "alert" : undefined}>{message}</span> : null}
       </label>
@@ -310,11 +361,11 @@ export const OneUISelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(
       if (!trigger) return;
       const rect = trigger.getBoundingClientRect();
       const viewportGap = 12;
-      const estimatedHeight = Math.min(320, Math.max(64, options.length * 56 + 12));
+      const estimatedHeight = Math.min(320, Math.max(64, options.length * 40 + 24));
       const availableBelow = window.innerHeight - rect.bottom - viewportGap;
       const availableAbove = rect.top - viewportGap;
       const placeAbove = availableBelow < Math.min(180, estimatedHeight) && availableAbove > availableBelow;
-      const width = Math.min(Math.max(rect.width, compact ? 190 : 240), window.innerWidth - viewportGap * 2);
+      const width = Math.min(Math.max(rect.width, 240), window.innerWidth - viewportGap * 2);
       const left = Math.min(Math.max(viewportGap, rect.left), window.innerWidth - width - viewportGap);
       const top = placeAbove
         ? Math.max(viewportGap, rect.top - Math.min(estimatedHeight, availableAbove) - 8)
@@ -408,7 +459,7 @@ export const OneUISelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(
                 onClick={() => commit(option)}
               >
                 <span>{option.label}</span>
-                <span className="one-ui-select-menu__check" aria-hidden="true" />
+                <img className="one-ui-select-menu__check" src={checkGlyph} alt="" />
               </button>
             </li>
           );
@@ -443,7 +494,7 @@ export const OneUISelectField = forwardRef<HTMLButtonElement, SelectFieldProps>(
             onKeyDown={onTriggerKeyDown}
           >
             <span className="one-ui-select-field__value">{selected?.label ?? "Select"}</span>
-            <span className="one-ui-select-field__chevron" aria-hidden="true" />
+            <img className="one-ui-select-field__chevron" src={arrowDownGlyph} alt="" />
           </button>
           {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
         </span>
@@ -476,7 +527,10 @@ export const OneUICheckboxRow = forwardRef<HTMLInputElement, CheckboxRowProps>(
           disabled={disabled || loading}
         />
         <span className="one-ui-checkbox-row__shape" aria-hidden="true">
-          {loading ? <OneUIProgressIndicator label="Updating" size="small" /> : null}
+            {loading ? <OneUIProgressIndicator label="Updating" size="small" /> : <>
+              <img className="one-ui-checkbox-row__unchecked" src={uncheckedGlyph} alt="" />
+              <img className="one-ui-checkbox-row__check" src={checkGlyph} alt="" />
+            </>}
         </span>
         <span className="one-ui-checkbox-row__label">{label}</span>
         {meta != null ? <span className="one-ui-checkbox-row__meta">{meta}</span> : null}
