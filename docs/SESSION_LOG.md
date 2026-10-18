@@ -1,3 +1,12 @@
+## 2026-10-19 - Published847b4c3; Windows checkout integrity fix
+
+Pushed847b4c3cd755289d7a7ea7778bb9b77740182048 to HFuoc/SignFlow main.
+GitHub run39172240708 installed desktop/worker dependencies but failed asset
+verification: Windows Git converted a hash-pinned reference JSON to CRLF.
+Added.gitattributes disabling text conversion for the recognition bundle and
+WebM demo. Kept all original model/reference hashes; did not weaken verification.
+Next push reruns clean-install CI. Goal is not complete until fresh setup passes.
+
 ## 2026-10-19 - Publication checks and Windows clean-install workflow
 
 Full local pytest:601 passed,2 deprecation warnings,75.59s. Previously verified

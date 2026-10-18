@@ -1,0 +1,4 @@
+# Recognition artifacts are hash-pinned byte sequences, including JSON manifests.
+# Never convert their line endings on a Windows checkout.
+configs/recognition-assets/** -text
+docs/demo/*.webm -text
