@@ -40,6 +40,8 @@ Set-Location SignFlow
 
 Setup giữ môi trường hiện có, cài dependency và build React. Cần Internet lần đầu; môi trường CPU nhận diện được cài riêng với phiên bản cố định. Dùng `setup.ps1 -WithTests` để thêm test dependencies, hoặc `-DesktopOnly` nếu chỉ cần simulator. VideoMAE GPU và các model KVSL bổ sung chưa được script này cài; không chọn chúng nếu chưa chuẩn bị runtime/artifact tương ứng.
 
+Đã xác minh setup từ checkout sạch trên Windows, nạp hai model CPU, khởi động/tắt app và chạy test: [kết quả GitHub Actions](https://github.com/HFuoc/SignFlow/actions/runs/39172533692), source `3aa8bd4` ngày 19/10/2026. Kiểm tra này không chứng minh độ chính xác webcam hoặc thay thế thử giao diện trên máy của bạn.
+
 ## 3. Chạy app
 
 Từ thư mục gốc `SignFlow`:

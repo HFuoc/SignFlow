@@ -1,3 +1,50 @@
+## 2026-10-19 - SignFlow publication verified
+
+Delivered user-requested source,setup,CPU runtime assets and actual app demo on
+HFuoc/SignFlow main. Source commit3aa8bd4bb63b13a03cf40c4e3fc7e5f4a8f9b50f;
+remote SHA independently read with git ls-remote.
+Windows fresh-checkout run39172533692 COMPLETED SUCCESS:
+https://github.com/HFuoc/SignFlow/actions/runs/39172533692
+Workflow ran setup.ps1 -WithTests (host + isolated worker + asset verification +
+npm ci + TypeScript/Vite build), loaded both CPU model checkpoints/normalization,
+run_app.ps1 -SkipBuild -SmokeTest,full backend pytest and frontend Vitest.
+Local verification:601 pytest,84 frontend tests,production build,real-worker
+browser replay with clean bridge shutdown; all passed.56 committed artifact
+blobs and demo verified byte-for-byte. Initial checkout CRLF failure was fixed
+without weakening hashes. C-drive local setup limitation remains documented;
+it was resolved for verification through a fresh hosted Windows runner,not by
+retrying the rejected local D-cache installation command.
+
+Delivered files:setup.ps1,configs/recognition-requirements.txt,
+configs/recognition-assets/**,install_recognition_assets.py and4tests,
+.github/workflows/windows-setup.yml,.gitattributes,README.md,
+docs/demo/reference-tracking.webm and attribution README; current application
+source/tests/docs also synchronized from workspace into the existing Git history.
+No secrets,datasets archives,dependency directories or generated app build shipped.
+Publication diff retained an existing controls.css blank EOF;no unrelated
+format-only edits. No forced push,history rewrite,merge or release tag.
+
+Demo records actual React/bridge/MediaPipe/ViSign output from reference replay.
+Source Chao yielded Toi,which is disclosed; no mocked score or accuracy claim.
+Replay duration13.28s,332frames at25fps. Model accuracy and60fresh tracking FPS
+remain unverified/unmet; multiple-user physical-camera acceptance remains next
+product gate. GPU/KVSL extras are not installed by the CPU setup and are explicitly
+optional/unavailable without separate artifacts. No default-model cutover.
+Hosted smoke verifies startup/shutdown,not a physical interactive desktop/camera.
+
+Final documentation-only follow-up records this successful code run; source,
+setup,models and tests remain identical to the verified3aa8bd4 snapshot.
+
+## 2026-10-19 - Live continuation handle: Windows CI39172533692
+
+Remote main now3aa8bd4bb63b13a03cf40c4e3fc7e5f4a8f9b50f (push succeeded).
+https://github.com/HFuoc/SignFlow/actions/runs/39172533692
+Latest API read:job is live, Install from clean checkout in_progress; later model,
+smoke and test steps pending. Poll this same run; do not restart while live.
+Committed blobs for all56 pinned bundle files and demo verified byte-for-byte.
+Publication clone clean after push. Local handoff alone has this continuation note.
+Goal remains active pending actual fresh Windows setup/model/smoke/test results.
+
 ## 2026-10-19 - Published847b4c3; Windows checkout integrity fix
 
 Pushed847b4c3cd755289d7a7ea7778bb9b77740182048 to HFuoc/SignFlow main.
